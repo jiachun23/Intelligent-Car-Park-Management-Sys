@@ -9,6 +9,7 @@ import numpy as np
 from labels import labels_dict
 import easyocr
 
+
 def default_device():
     '''Indicate availablibity of GPU, otherwise return CPU'''
     if torch.cuda.is_available():
@@ -120,13 +121,17 @@ def car_recogniser(our_img):
 
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
+    st.text("Detected vehicle model: ")
     predicted_val
 
     #converting PIL object into numpy array for ocr
     new_array = np.array(car_image)
     reader = easyocr.Reader(['en'], gpu=False)
     bounds = reader.readtext(new_array, detail=0)
-    bounds
+
+    st.text("Detected license plate number: ")
+    for x in bounds:
+        x
 
 
 
