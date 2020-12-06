@@ -9,6 +9,7 @@ from labels import labels_dict
 import easyocr
 import datetime
 import psycopg2
+from datetime import datetime as dt
 
 
 
@@ -305,65 +306,75 @@ elif options == 'Parking Fee Calculation':
     st.markdown(html_temp, unsafe_allow_html=True)
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
-    sql = """select concat_ws(',', vehicle_data_entrance.vehicle_brand,vehicle_data_entrance.plate_number)
-             as vehicle_info from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
+
+    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
 
     cursor.execute(sql)
 
     result = [i[0] for i in cursor.fetchall()]
 
-    dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
 
+
+    dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
+    selection = dropdown
     st.text("Vehicle Entrance Time:")
+    cursor.execute("select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s",(selection,))
+    result_enter = str(cursor.fetchone()[0])
+    result_enter
 
 
 
     st.text("Vehicle Exit Time:")
-
+    cursor.execute("select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s",(selection,))
+    result_exit = str(cursor.fetchone()[0])
+    result_exit
 
     # shows the calculation of parking duration and fee
     st.text("Total parking duration (in minutes):")
+    time_enter = dt.strptime(result_enter, "%Y/%m/%d, %H:%M:%S")
+    time_exit = dt.strptime(result_exit, "%Y/%m/%d, %H:%M:%S")
+    duration = (time_exit - time_enter) // datetime.timedelta(minutes=1)
+    duration
 
+    st.header("Total Parking Fee:")
+    if 0 <= duration <= 15:
+        st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
 
-    # st.header("Total Parking Fee:")
-    # if 0 <= duration <= 15:
-    #     st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
-    #
-    # elif 15 <= duration <= 60:
-    #     fee = 2.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 60 <= duration <= 120:
-    #     fee = 3.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 120 <= duration <= 180 :
-    #     fee = 4.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 180 <= duration <= 240 :
-    #     fee = 5.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 240 <= duration <= 300:
-    #     fee = 6.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 300 <= duration <= 360:
-    #     fee = 7.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 360 <= duration <= 420:
-    #     fee = 8.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # elif 420 <= duration <= 480:
-    #     fee = 9.00
-    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-    #
-    # else:
-    #     fee = 10.00
-    #     st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    elif 15 <= duration <= 60:
+        fee = 2.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 60 <= duration <= 120:
+        fee = 3.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 120 <= duration <= 180 :
+        fee = 4.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 180 <= duration <= 240 :
+        fee = 5.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 240 <= duration <= 300:
+        fee = 6.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 300 <= duration <= 360:
+        fee = 7.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 360 <= duration <= 420:
+        fee = 8.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    elif 420 <= duration <= 480:
+        fee = 9.00
+        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+
+    else:
+        fee = 10.00
+        st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
 
 else:
     st.text("The option is not exist. Please try again.")
