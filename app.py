@@ -8,6 +8,7 @@ import numpy as np
 from labels import labels_dict
 import easyocr
 import datetime
+import psycopg2
 
 
 
@@ -95,8 +96,20 @@ model = to_device(Resnet50(), device)
 path = "car_model.pt"
 car_model = torch.load(path, map_location=torch.device('cpu'))
 
+def current_time():
+    return datetime.datetime.now().replace(microsecond=0)
 
-def car_recogniser(our_img):
+def car_recogniser_entrance(our_img):
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+    # Setting auto commit false
+    conn.autocommit = True
+
+    # Creating a cursor object using the cursor() method
+    cursor = conn.cursor()
+
     car_image = our_img
 
     trans = transforms.Compose([
@@ -116,6 +129,8 @@ def car_recogniser(our_img):
 
     prediction = int(torch.max(output.data, 1)[1].numpy())
 
+
+
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
     st.text("Detected vehicle model: ")
@@ -127,11 +142,82 @@ def car_recogniser(our_img):
     bounds = reader.readtext(new_array, detail=0)
 
     st.text("Detected license plate number: ")
-    for x in bounds:
-        x
+    num_plate = ' '.join([str(elem) for elem in bounds])
+    num_plate
+
+    enter_time = current_time()
+    st.text("The vehicle enter the parking at:")
+    enter_time
+    time_enter = enter_time.strftime("%Y/%m/%d, %H:%M:%S")
 
 
-def car_detection():
+    sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time) VALUES(%s,%s,%s)"""
+    record_to_enter = (predicted_val, num_plate, time_enter)
+    cursor.execute(sql,record_to_enter)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def car_recogniser_exit(our_img):
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+    # Setting auto commit false
+    conn.autocommit = True
+
+    # Creating a cursor object using the cursor() method
+    cursor = conn.cursor()
+
+    car_image = our_img
+
+    trans = transforms.Compose([
+        transforms.Resize((400, 400)),
+        transforms.RandomRotation(15),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        # transforms.RandomErasing(inplace=True),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    # preprocessing for prediction image
+    input = trans(car_image)
+    input = input.view(1, 3, 400, 400)
+
+    output = car_model(input)
+
+    prediction = int(torch.max(output.data, 1)[1].numpy())
+
+
+
+    # return prediction label
+    predicted_val = ([value for value in labels_dict.values()][prediction])
+    st.text("Detected vehicle model: ")
+    predicted_val
+
+    # converting PIL object into numpy array for ocr
+    new_array = np.array(car_image)
+    reader = easyocr.Reader(['en'], gpu=False)
+    bounds = reader.readtext(new_array, detail=0)
+
+    st.text("Detected license plate number: ")
+    num_plate = ' '.join([str(elem) for elem in bounds])
+    num_plate
+
+    ext_time = current_time()
+    st.text("The vehicle enter the parking at:")
+    ext_time
+    time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
+
+
+    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time) VALUES(%s,%s,%s)"""
+    record_to_enter = (predicted_val, num_plate, time_exit)
+    cursor.execute(sql,record_to_enter)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def car_detection_entrance():
     global our_image
     html_temp = """
         <body style="background-color:red;">
@@ -150,15 +236,30 @@ def car_detection():
         st.image(our_image)
 
     if st.button("Recognise"):
-        car_recogniser(our_image)
+        car_recogniser_entrance(our_image)
 
 
-def current_time():
-    return datetime.datetime.now().replace(microsecond=0)
 
-# global enter_time, exit_time
-# enter_time = current_time()
-# exit_time = current_time()
+def car_detection_exit():
+    global our_image
+    html_temp = """
+        <body style="background-color:red;">
+        <div style="background-color:teal ;padding:10px">
+        <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+        </div>
+        </body>
+        """
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+
+    image_file = st.file_uploader("Upload Image", type=['jpg', 'png', 'jpeg'])
+    if image_file is not None:
+        our_image = PIL.Image.open(image_file)
+        st.text("Original Image")
+        st.image(our_image)
+
+    if st.button("Recognise"):
+        car_recogniser_exit(our_image)
 
 # option at the side bar
 options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation'])
@@ -169,32 +270,29 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 if options == 'Parking Entrance':
 
     st.title("Car Model + License Plate Recognition for Parking Entrance")
-    car_detection()
-    enter_time = current_time()
-    st.text("The vehicle enter the parking at:")
-    enter_time
-    time_enter = enter_time.strftime("%Y/%m/%d, %H:%M:%S")
-    with open("enter_time.txt", "w") as f:
-        f.write(time_enter)
-
+    car_detection_entrance()
 
 
 elif options == 'Parking Exit':
 
     st.title("Car Model + License Plate Recognition for Parking Exit")
-    car_detection()
-    exit_time = current_time()
-    st.text("The vehicle exit the parking at:")
-    exit_time
-    time_exit = exit_time.strftime("%Y/%m/%d, %H:%M:%S")
-    with open("exit_time.txt", "w") as f:
-        f.write(time_exit)
+    car_detection_exit()
+
 
 
 
 
 elif options == 'Parking Fee Calculation':
-    from datetime import datetime as dt
+
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+    # Setting auto commit false
+    conn.autocommit = True
+
+    # Creating a cursor object using the cursor() method
+    cursor = conn.cursor()
 
     st.title("Parking Fee Calculation")
     html_temp = """
@@ -207,63 +305,65 @@ elif options == 'Parking Fee Calculation':
     st.markdown(html_temp, unsafe_allow_html=True)
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
+    sql = """select concat_ws(',', vehicle_data_entrance.vehicle_brand,vehicle_data_entrance.plate_number)
+             as vehicle_info from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
+
+    cursor.execute(sql)
+
+    result = [i[0] for i in cursor.fetchall()]
+
+    dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
+
     st.text("Vehicle Entrance Time:")
-    with open("enter_time.txt", "r") as f:
-        enter_time = f.readline()
-    time_enter = dt.strptime(enter_time, "%Y/%m/%d, %H:%M:%S")
-    time_enter
+
 
 
     st.text("Vehicle Exit Time:")
-    with open("exit_time.txt", "r") as f:
-        exit_time = f.readline()
-    time_exit = dt.strptime(exit_time, "%Y/%m/%d, %H:%M:%S")
-    time_exit
+
 
     # shows the calculation of parking duration and fee
     st.text("Total parking duration (in minutes):")
-    duration = (time_exit - time_enter) // datetime.timedelta(minutes=1)
-    duration
 
-    st.header("Total Parking Fee:")
-    if 0 <= duration <= 15:
-        st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
 
-    elif 15 <= duration <= 60:
-        fee = 2.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 60 <= duration <= 120:
-        fee = 3.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 120 <= duration <= 180 :
-        fee = 4.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 180 <= duration <= 240 :
-        fee = 5.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 240 <= duration <= 300:
-        fee = 6.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 300 <= duration <= 360:
-        fee = 7.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 360 <= duration <= 420:
-        fee = 8.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    elif 420 <= duration <= 480:
-        fee = 9.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-
-    else:
-        fee = 10.00
-        st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    # st.header("Total Parking Fee:")
+    # if 0 <= duration <= 15:
+    #     st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
+    #
+    # elif 15 <= duration <= 60:
+    #     fee = 2.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 60 <= duration <= 120:
+    #     fee = 3.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 120 <= duration <= 180 :
+    #     fee = 4.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 180 <= duration <= 240 :
+    #     fee = 5.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 240 <= duration <= 300:
+    #     fee = 6.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 300 <= duration <= 360:
+    #     fee = 7.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 360 <= duration <= 420:
+    #     fee = 8.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # elif 420 <= duration <= 480:
+    #     fee = 9.00
+    #     st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+    #
+    # else:
+    #     fee = 10.00
+    #     st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
 
 else:
     st.text("The option is not exist. Please try again.")
