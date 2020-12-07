@@ -10,6 +10,7 @@ import easyocr
 import datetime
 import psycopg2
 from datetime import datetime as dt
+import pandas as pd
 
 
 
@@ -97,8 +98,10 @@ model = to_device(Resnet50(), device)
 path = "car_model.pt"
 car_model = torch.load(path, map_location=torch.device('cpu'))
 
+
 def current_time():
     return datetime.datetime.now().replace(microsecond=0)
+
 
 def car_recogniser_entrance(our_img):
     # Establishing the connection
@@ -130,8 +133,6 @@ def car_recogniser_entrance(our_img):
 
     prediction = int(torch.max(output.data, 1)[1].numpy())
 
-
-
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
     st.text("Detected vehicle model: ")
@@ -151,13 +152,13 @@ def car_recogniser_entrance(our_img):
     enter_time
     time_enter = enter_time.strftime("%Y/%m/%d, %H:%M:%S")
 
-
     sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time) VALUES(%s,%s,%s)"""
     record_to_enter = (predicted_val, num_plate, time_enter)
-    cursor.execute(sql,record_to_enter)
+    cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
     conn.close()
+
 
 def car_recogniser_exit(our_img):
     # Establishing the connection
@@ -189,8 +190,6 @@ def car_recogniser_exit(our_img):
 
     prediction = int(torch.max(output.data, 1)[1].numpy())
 
-
-
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
     st.text("Detected vehicle model: ")
@@ -210,13 +209,13 @@ def car_recogniser_exit(our_img):
     ext_time
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
 
-
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time) VALUES(%s,%s,%s)"""
     record_to_enter = (predicted_val, num_plate, time_exit)
-    cursor.execute(sql,record_to_enter)
+    cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
     conn.close()
+
 
 def car_detection_entrance():
     global our_image
@@ -240,7 +239,6 @@ def car_detection_entrance():
         car_recogniser_entrance(our_image)
 
 
-
 def car_detection_exit():
     global our_image
     html_temp = """
@@ -262,8 +260,10 @@ def car_detection_exit():
     if st.button("Recognise"):
         car_recogniser_exit(our_image)
 
+
 # option at the side bar
-options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation'])
+options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
+                                                    'Parking Database'])
 
 # title
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -295,6 +295,8 @@ elif options == 'Parking Fee Calculation':
     # Creating a cursor object using the cursor() method
     cursor = conn.cursor()
 
+    cursor1 = conn.cursor()
+
     st.title("Parking Fee Calculation")
     html_temp = """
         <body style="background-color:red;">
@@ -306,7 +308,6 @@ elif options == 'Parking Fee Calculation':
     st.markdown(html_temp, unsafe_allow_html=True)
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
-
     sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
 
     cursor.execute(sql)
@@ -314,67 +315,147 @@ elif options == 'Parking Fee Calculation':
     result = [i[0] for i in cursor.fetchall()]
 
 
-
     dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
     selection = dropdown
     st.text("Vehicle Entrance Time:")
-    cursor.execute("select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s",(selection,))
+    cursor.execute("select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s",
+        (selection,))
     result_enter = str(cursor.fetchone()[0])
     result_enter
 
-
-
     st.text("Vehicle Exit Time:")
-    cursor.execute("select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s",(selection,))
+    cursor.execute("select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s",
+        (selection,))
     result_exit = str(cursor.fetchone()[0])
-    result_exit
+    if result_exit != None:
+        result_exit
+    else:
+        st.text("The vehicle has not leave the parking yet.")
 
     # shows the calculation of parking duration and fee
-    st.text("Total parking duration (in minutes):")
-    time_enter = dt.strptime(result_enter, "%Y/%m/%d, %H:%M:%S")
-    time_exit = dt.strptime(result_exit, "%Y/%m/%d, %H:%M:%S")
-    duration = (time_exit - time_enter) // datetime.timedelta(minutes=1)
-    duration
+    if result_enter and result_exit != None:
+        st.text("Total parking duration (in minutes):")
+        time_enter = dt.strptime(result_enter, "%Y/%m/%d, %H:%M:%S")
+        time_exit = dt.strptime(result_exit, "%Y/%m/%d, %H:%M:%S")
+        duration = (time_exit - time_enter) // datetime.timedelta(minutes=1)
+        duration
+
+    else:
+        st.text("The vehicle is still in the parking.")
 
     st.header("Total Parking Fee:")
     if 0 <= duration <= 15:
+        fee = 0.00
         st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
+
 
     elif 15 <= duration <= 60:
         fee = 2.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
 
     elif 60 <= duration <= 120:
         fee = 3.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
 
-    elif 120 <= duration <= 180 :
+    elif 120 <= duration <= 180:
         fee = 4.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
 
-    elif 180 <= duration <= 240 :
+
+    elif 180 <= duration <= 240:
         fee = 5.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
+
 
     elif 240 <= duration <= 300:
         fee = 6.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
+
 
     elif 300 <= duration <= 360:
         fee = 7.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
+
 
     elif 360 <= duration <= 420:
         fee = 8.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
+
 
     elif 420 <= duration <= 480:
         fee = 9.00
         st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
 
     else:
         fee = 10.00
         st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+        record_to_enter = (duration, fee, (selection,))
+        cursor1.execute(sql, record_to_enter)
+
+
+
+elif options == 'Parking Database':
+
+    st.title("Parking Database")
+    html_temp = """
+           <body style="background-color:red;">
+           <div style="background-color:teal ;padding:10px">
+           <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+           </div>
+           </body>
+           """
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+
+    # Setting auto commit false
+    conn.autocommit = True
+
+    sql = pd.read_sql_query("""select vehicle_data_entrance.vehicle_brand, vehicle_data_entrance.plate_number,
+                               vehicle_data_entrance.enter_time, vehicle_data_exit.exit_time,
+                               vehicle_data_exit.duration, vehicle_data_exit.fee
+                               from vehicle_data_entrance 
+                               left join vehicle_data_exit ON 
+                               vehicle_data_entrance.plate_number = vehicle_data_exit.plate_number 
+			                   order by vehicle_data_entrance.plate_number """, conn)
+
+
+    df = pd.DataFrame(sql, columns=['vehicle_brand', 'plate_number', 'enter_time', 'exit_time','duration','fee'])
+    df
+
+    st.table(df)
+
 
 else:
     st.text("The option is not exist. Please try again.")
