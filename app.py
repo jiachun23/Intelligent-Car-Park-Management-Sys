@@ -11,6 +11,8 @@ import datetime
 import psycopg2
 from datetime import datetime as dt
 import pandas as pd
+import plotly.graph_objects as go
+import calendar
 
 
 
@@ -103,6 +105,10 @@ def current_time():
     return datetime.datetime.now().replace(microsecond=0)
 
 
+def findDay(date):
+    day = datetime.datetime.strptime(date, '%Y %m %d').weekday()
+    return (calendar.day_name[day])
+
 def car_recogniser_entrance(our_img):
     # Establishing the connection
     conn = psycopg2.connect(
@@ -151,9 +157,13 @@ def car_recogniser_entrance(our_img):
     st.text("The vehicle enter the parking at:")
     enter_time
     time_enter = enter_time.strftime("%Y/%m/%d, %H:%M:%S")
+    day_enter = enter_time.strftime("%Y %m %d")
+    which_day = findDay(day_enter)
 
-    sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time) VALUES(%s,%s,%s)"""
-    record_to_enter = (predicted_val, num_plate, time_enter)
+
+
+    sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, week_day) VALUES(%s,%s,%s,%s)"""
+    record_to_enter = (predicted_val, num_plate, time_enter,  which_day)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -208,9 +218,11 @@ def car_recogniser_exit(our_img):
     st.text("The vehicle enter the parking at:")
     ext_time
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
+    day_exit = ext_time.strftime("%Y %m %d")
+    which_day = findDay(day_exit)
 
-    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time) VALUES(%s,%s,%s)"""
-    record_to_enter = (predicted_val, num_plate, time_exit)
+    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, week_day) VALUES(%s,%s,%s,%s)"""
+    record_to_enter = (predicted_val, num_plate, time_exit, which_day)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -263,7 +275,8 @@ def car_detection_exit():
 
 # option at the side bar
 options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
-                                                    'Parking Database'])
+                                                    'Parking Database','No of Vehicles in the Parking','No of Parking Transactions by Day'
+                                                    ])
 
 # title
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -434,6 +447,7 @@ elif options == 'Parking Database':
            """
     st.markdown(html_temp, unsafe_allow_html=True)
     st.set_option('deprecation.showfileUploaderEncoding', False)
+
     # Establishing the connection
     conn = psycopg2.connect(
         database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
@@ -449,12 +463,137 @@ elif options == 'Parking Database':
                                left join vehicle_data_exit ON 
                                vehicle_data_entrance.plate_number = vehicle_data_exit.plate_number 
 			                   order by vehicle_data_entrance.plate_number """, conn)
-
-
+    st.text("\n")
+    st.text("\n")
+    st.text("\n")
     df = pd.DataFrame(sql, columns=['vehicle_brand', 'plate_number', 'enter_time', 'exit_time','duration','fee'])
     df
 
-    st.table(df)
+
+
+
+elif options == 'No of Vehicles in the Parking':
+
+    st.title("No of Vehicles in the Parking")
+    html_temp = """
+              <body style="background-color:red;">
+              <div style="background-color:teal ;padding:10px">
+              <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+              </div>
+              </body>
+              """
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+
+    # Setting auto commit false
+    conn.autocommit = True
+    cursor = conn.cursor()
+    cursor1 = conn.cursor()
+
+    sql = """select count(plate_number) from vehicle_data_entrance"""
+    cursor.execute(sql)
+    ent = cursor.fetchone()
+    ent = int(''.join(map(str, ent)))
+
+    sql_exit = """select count(plate_number) from vehicle_data_exit"""
+    cursor1.execute(sql_exit)
+    ext = cursor1.fetchone()
+    ext = int(''.join(map(str, ext)))
+
+    remain = ent-ext
+    left = ext
+
+    labels = ['Remaining in Car Park', 'Left the Car Park']
+    values = [remain, left]
+
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
+    st.plotly_chart(fig)
+
+
+elif options == 'No of Parking Transactions by Day':
+
+    st.title("No of Parking by Day")
+    html_temp = """
+                 <body style="background-color:red;">
+                 <div style="background-color:teal ;padding:10px">
+                 <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+                 </div>
+                 </body>
+                 """
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+
+    # Setting auto commit false
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    sql = """SELECT week_day FROM vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s """
+    start_date_list = ['2020/1/1','2020/2/1','2020/3/1','2020/4/1','2020/5/1','2020/6/1','2020/7/1',
+                       '2020/8/1','2020/9/1','2020/10/1','2020/11/1','2020/12/1',
+                       '2021/1/1', '2021/2/1', '2021/3/1', '2021/4/1', '2021/5/1', '2021/6/1', '2021/7/1',
+                       '2021/8/1', '2021/9/1', '2021/10/1', '2021/11/1', '2021/12/1']
+    end_date_list = ['2020/1/31', '2020/2/29', '2020/3/31', '2020/4/30', '2020/5/31', '2020/6/30', '2020/7/31',
+                    '2020/8/31', '2020/9/30', '2020/10/31', '2020/11/30', '2020/12/31',
+                     '2021/1/31', '2021/2/28', '2021/3/31', '2021/4/30', '2021/5/31', '2021/6/30', '2021/7/31',
+                     '2021/8/31', '2021/9/30', '2021/10/31', '2021/11/30', '2021/12/31']
+    dropdown_1 = st.selectbox('Starting date: ',start_date_list)
+    dropdown_2 = st.selectbox('End date: ', end_date_list)
+
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Monday' AND  enter_time >= %s AND  enter_time <= %s  """
+    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    mon = cursor.fetchone()
+    mon = int(''.join(map(str, mon)))
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Tuesday' AND   enter_time >= %s AND  enter_time <= %s  """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    tues = cursor.fetchone()
+    tues = int(''.join(map(str, tues)))
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Wednesday' AND  enter_time >= %s AND  enter_time <= %s """
+    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    wed = cursor.fetchone()
+    wed = int(''.join(map(str, wed)))
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Thursday' AND  enter_time >= %s AND  enter_time <= %s """
+    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    thurs = cursor.fetchone()
+    thurs = int(''.join(map(str, thurs)))
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Friday' AND  enter_time >= %s AND  enter_time <= %s """
+    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    fri = cursor.fetchone()
+    fri = int(''.join(map(str, fri)))
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Saturday' AND enter_time >= %s AND  enter_time <= %s """
+    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    sat = cursor.fetchone()
+    sat = int(''.join(map(str, sat)))
+
+    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Sunday' AND   enter_time >= %s AND  enter_time <= %s  """
+    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    sun = cursor.fetchone()
+    sun = int(''.join(map(str, sun)))
+
+    labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekdays = [mon, tues, wed, thurs, fri, sat, sun]
+    data = [go.Bar(
+        x=labels,
+        y=weekdays)]
+    fig = go.Figure(data=data)
+    st.plotly_chart(fig)
+
+
+
+
 
 
 else:
