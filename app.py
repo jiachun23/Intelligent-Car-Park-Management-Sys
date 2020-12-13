@@ -16,6 +16,7 @@ import calendar
 
 
 
+
 def default_device():
     '''Indicate availablibity of GPU, otherwise return CPU'''
     if torch.cuda.is_available():
@@ -202,6 +203,7 @@ def car_recogniser_exit(our_img):
 
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
+    # comparing algo
     st.text("Detected vehicle model: ")
     predicted_val
 
@@ -275,8 +277,8 @@ def car_detection_exit():
 
 # option at the side bar
 options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
-                                                    'Parking Database','No of Vehicles in the Parking','No of Parking Transactions by Day'
-                                                    ])
+                                                    'Parking Database','No of Vehicles in the Parking','No of Parking Transactions by Day',
+                                                    'Amount of Parking Fee Collected by Day'])
 
 # title
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -516,7 +518,7 @@ elif options == 'No of Vehicles in the Parking':
 
 elif options == 'No of Parking Transactions by Day':
 
-    st.title("No of Parking by Day")
+    st.title("No of Parking Transactions by Day")
     html_temp = """
                  <body style="background-color:red;">
                  <div style="background-color:teal ;padding:10px">
@@ -551,6 +553,7 @@ elif options == 'No of Parking Transactions by Day':
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Monday' AND  enter_time >= %s AND  enter_time <= %s  """
     cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
     mon = cursor.fetchone()
+
     mon = int(''.join(map(str, mon)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Tuesday' AND   enter_time >= %s AND  enter_time <= %s  """
@@ -589,12 +592,119 @@ elif options == 'No of Parking Transactions by Day':
         x=labels,
         y=weekdays)]
     fig = go.Figure(data=data)
+    fig.update_layout(title='No of Parking Transactions by Day', xaxis_title='Day',
+                     yaxis_title='No of Parking Transactions')
     st.plotly_chart(fig)
 
 
+elif options == 'Amount of Parking Fee Collected by Day':
+
+    st.title("Amount of Parking Fee Collected by Day")
+    html_temp = """
+                 <body style="background-color:red;">
+                 <div style="background-color:teal ;padding:10px">
+                 <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+                 </div>
+                 </body>
+                 """
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+
+    # Setting auto commit false
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    sql = """SELECT week_day FROM vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s """
+    start_date_list = ['2020/1/1','2020/2/1','2020/3/1','2020/4/1','2020/5/1','2020/6/1','2020/7/1',
+                       '2020/8/1','2020/9/1','2020/10/1','2020/11/1','2020/12/1',
+                       '2021/1/1', '2021/2/1', '2021/3/1', '2021/4/1', '2021/5/1', '2021/6/1', '2021/7/1',
+                       '2021/8/1', '2021/9/1', '2021/10/1', '2021/11/1', '2021/12/1']
+    end_date_list = ['2020/1/31', '2020/2/29', '2020/3/31', '2020/4/30', '2020/5/31', '2020/6/30', '2020/7/31',
+                    '2020/8/31', '2020/9/30', '2020/10/31', '2020/11/30', '2020/12/31',
+                     '2021/1/31', '2021/2/28', '2021/3/31', '2021/4/30', '2021/5/31', '2021/6/30', '2021/7/31',
+                     '2021/8/31', '2021/9/30', '2021/10/31', '2021/11/30', '2021/12/31']
+    dropdown_1 = st.selectbox('Starting date: ',start_date_list)
+    dropdown_2 = st.selectbox('End date: ', end_date_list)
+
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Monday' AND  exit_time >= %s AND  exit_time <= %s  """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    mon = cursor.fetchone()[0]
+    if mon != None:
+        mon = mon
+
+    else:
+        mon = 0
 
 
 
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Tuesday' AND   exit_time >= %s AND  exit_time <= %s  """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    tues = cursor.fetchone()[0]
+    if tues != None:
+        tues = tues
+
+    else:
+        tues = 0
+
+
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day  = 'Wednesday' AND  exit_time >= %s AND  exit_time <= %s """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    wed = cursor.fetchone()[0]
+    if wed != None:
+        wed = wed
+
+    else:
+        wed = 0
+
+
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day  = 'Thursday' AND  exit_time >= %s AND  exit_time <= %s """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    thurs = cursor.fetchone()[0]
+    if thurs != None:
+        thurs = thurs
+
+    else:
+        thurs = 0
+
+
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Friday' AND  exit_time >= %s AND  exit_time <= %s """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    fri = cursor.fetchone()[0]
+    if fri != None:
+        fri = fri
+
+    else:
+        fri = 0
+
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Saturday' AND exit_time >= %s AND exit_time <= %s """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    sat = cursor.fetchone()[0]
+    if sat != None:
+        sat = sat
+
+    else:
+        sat = 0
+
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Sunday' AND  exit_time >= %s AND  exit_time <= %s  """
+    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    sun = cursor.fetchone()[0]
+    if sun != None:
+        sun = sun
+
+    else:
+        sun = 0
+
+
+    labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    amount = [mon,tues,wed,thurs,fri,sat,sun]
+    data = [go.Scatter(x= labels,y=amount)]
+    fig = go.Figure(data=data)
+    fig.update_layout(title='Amount of Parking Fee Collected by Day',xaxis_title='Day',yaxis_title='Amount of Fee Collected (RM)')
+    st.plotly_chart(fig)
 
 else:
     st.text("The option is not exist. Please try again.")
