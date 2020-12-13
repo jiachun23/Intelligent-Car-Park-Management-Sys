@@ -537,52 +537,46 @@ elif options == 'No of Parking Transactions by Day':
     conn.autocommit = True
     cursor = conn.cursor()
 
-    sql = """SELECT week_day FROM vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s """
-    start_date_list = ['2020/1/1','2020/2/1','2020/3/1','2020/4/1','2020/5/1','2020/6/1','2020/7/1',
-                       '2020/8/1','2020/9/1','2020/10/1','2020/11/1','2020/12/1',
-                       '2021/1/1', '2021/2/1', '2021/3/1', '2021/4/1', '2021/5/1', '2021/6/1', '2021/7/1',
-                       '2021/8/1', '2021/9/1', '2021/10/1', '2021/11/1', '2021/12/1']
-    end_date_list = ['2020/1/31', '2020/2/29', '2020/3/31', '2020/4/30', '2020/5/31', '2020/6/30', '2020/7/31',
-                    '2020/8/31', '2020/9/30', '2020/10/31', '2020/11/30', '2020/12/31',
-                     '2021/1/31', '2021/2/28', '2021/3/31', '2021/4/30', '2021/5/31', '2021/6/30', '2021/7/31',
-                     '2021/8/31', '2021/9/30', '2021/10/31', '2021/11/30', '2021/12/31']
-    dropdown_1 = st.selectbox('Starting date: ',start_date_list)
-    dropdown_2 = st.selectbox('End date: ', end_date_list)
+    start_date = st.date_input('Starting Date: ')
+    end_date = st.date_input('End Date: ')
 
+    start_date = start_date.strftime("%Y/%m/%d")
+
+    end_date = end_date.strftime("%Y/%m/%d")
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Monday' AND  enter_time >= %s AND  enter_time <= %s  """
-    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     mon = cursor.fetchone()
 
     mon = int(''.join(map(str, mon)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Tuesday' AND   enter_time >= %s AND  enter_time <= %s  """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql, (start_date, end_date))
     tues = cursor.fetchone()
     tues = int(''.join(map(str, tues)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Wednesday' AND  enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    cursor.execute(sql, (start_date, end_date))
     wed = cursor.fetchone()
     wed = int(''.join(map(str, wed)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Thursday' AND  enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     thurs = cursor.fetchone()
     thurs = int(''.join(map(str, thurs)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Friday' AND  enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    cursor.execute(sql, (start_date, end_date))
     fri = cursor.fetchone()
     fri = int(''.join(map(str, fri)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Saturday' AND enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    cursor.execute(sql, (start_date, end_date))
     sat = cursor.fetchone()
     sat = int(''.join(map(str, sat)))
 
     sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Sunday' AND   enter_time >= %s AND  enter_time <= %s  """
-    cursor.execute(sql,((dropdown_1,),(dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     sun = cursor.fetchone()
     sun = int(''.join(map(str, sun)))
 
@@ -618,20 +612,14 @@ elif options == 'Amount of Parking Fee Collected by Day':
     conn.autocommit = True
     cursor = conn.cursor()
 
-    sql = """SELECT week_day FROM vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s """
-    start_date_list = ['2020/1/1','2020/2/1','2020/3/1','2020/4/1','2020/5/1','2020/6/1','2020/7/1',
-                       '2020/8/1','2020/9/1','2020/10/1','2020/11/1','2020/12/1',
-                       '2021/1/1', '2021/2/1', '2021/3/1', '2021/4/1', '2021/5/1', '2021/6/1', '2021/7/1',
-                       '2021/8/1', '2021/9/1', '2021/10/1', '2021/11/1', '2021/12/1']
-    end_date_list = ['2020/1/31', '2020/2/29', '2020/3/31', '2020/4/30', '2020/5/31', '2020/6/30', '2020/7/31',
-                    '2020/8/31', '2020/9/30', '2020/10/31', '2020/11/30', '2020/12/31',
-                     '2021/1/31', '2021/2/28', '2021/3/31', '2021/4/30', '2021/5/31', '2021/6/30', '2021/7/31',
-                     '2021/8/31', '2021/9/30', '2021/10/31', '2021/11/30', '2021/12/31']
-    dropdown_1 = st.selectbox('Starting date: ',start_date_list)
-    dropdown_2 = st.selectbox('End date: ', end_date_list)
+    start_date = st.date_input('Starting Date: ')
+    end_date = st.date_input('End Date: ')
+
+    start_date = start_date.strftime("%Y/%m/%d")
+    end_date = end_date.strftime("%Y/%m/%d")
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Monday' AND  exit_time >= %s AND  exit_time <= %s  """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     mon = cursor.fetchone()[0]
     if mon != None:
         mon = mon
@@ -642,7 +630,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
 
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Tuesday' AND   exit_time >= %s AND  exit_time <= %s  """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     tues = cursor.fetchone()[0]
     if tues != None:
         tues = tues
@@ -652,7 +640,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
 
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day  = 'Wednesday' AND  exit_time >= %s AND  exit_time <= %s """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql, (start_date, end_date))
     wed = cursor.fetchone()[0]
     if wed != None:
         wed = wed
@@ -662,7 +650,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
 
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day  = 'Thursday' AND  exit_time >= %s AND  exit_time <= %s """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     thurs = cursor.fetchone()[0]
     if thurs != None:
         thurs = thurs
@@ -672,7 +660,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
 
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Friday' AND  exit_time >= %s AND  exit_time <= %s """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql, (start_date, end_date))
     fri = cursor.fetchone()[0]
     if fri != None:
         fri = fri
@@ -681,7 +669,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
         fri = 0
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Saturday' AND exit_time >= %s AND exit_time <= %s """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     sat = cursor.fetchone()[0]
     if sat != None:
         sat = sat
@@ -690,7 +678,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
         sat = 0
 
     sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Sunday' AND  exit_time >= %s AND  exit_time <= %s  """
-    cursor.execute(sql, ((dropdown_1,), (dropdown_2,)))
+    cursor.execute(sql,(start_date,end_date))
     sun = cursor.fetchone()[0]
     if sun != None:
         sun = sun
