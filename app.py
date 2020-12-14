@@ -105,10 +105,9 @@ car_model = torch.load(path, map_location=torch.device('cpu'))
 def current_time():
     return datetime.datetime.now().replace(microsecond=0)
 
-
-def findDay(date):
-    day = datetime.datetime.strptime(date, '%Y %m %d').weekday()
-    return (calendar.day_name[day])
+# def findDay(date):
+#     day = datetime.datetime.strptime(date, '%Y %m %d').weekday()
+#     return (calendar.day_name[day])
 
 def car_recogniser_entrance(our_img):
     # Establishing the connection
@@ -159,12 +158,11 @@ def car_recogniser_entrance(our_img):
     enter_time
     time_enter = enter_time.strftime("%Y/%m/%d, %H:%M:%S")
     day_enter = enter_time.strftime("%Y %m %d")
-    which_day = findDay(day_enter)
 
 
 
-    sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, week_day) VALUES(%s,%s,%s,%s)"""
-    record_to_enter = (predicted_val, num_plate, time_enter,  which_day)
+    sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, enter_date) VALUES(%s,%s,%s,%s)"""
+    record_to_enter = (predicted_val, num_plate, time_enter,  day_enter)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -221,10 +219,9 @@ def car_recogniser_exit(our_img):
     ext_time
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
     day_exit = ext_time.strftime("%Y %m %d")
-    which_day = findDay(day_exit)
 
-    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, week_day) VALUES(%s,%s,%s,%s)"""
-    record_to_enter = (predicted_val, num_plate, time_exit, which_day)
+    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s)"""
+    record_to_enter = (predicted_val, num_plate, time_exit, day_exit)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -541,52 +538,30 @@ elif options == 'No of Parking Transactions by Day':
     end_date = st.date_input('End Date: ')
 
     start_date = start_date.strftime("%Y/%m/%d")
-
     end_date = end_date.strftime("%Y/%m/%d")
 
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Monday' AND  enter_time >= %s AND  enter_time <= %s  """
+
+    sql = """select count(*) from vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s group by enter_date  """
     cursor.execute(sql,(start_date,end_date))
-    mon = cursor.fetchone()
+    list1 = [item[0] for item in cursor.fetchall()]
 
-    mon = int(''.join(map(str, mon)))
 
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Tuesday' AND   enter_time >= %s AND  enter_time <= %s  """
+
+    sql = """select enter_date from vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s group by enter_date """
     cursor.execute(sql, (start_date, end_date))
-    tues = cursor.fetchone()
-    tues = int(''.join(map(str, tues)))
+    list2 = [item[0] for item in cursor.fetchall()]
 
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Wednesday' AND  enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql, (start_date, end_date))
-    wed = cursor.fetchone()
-    wed = int(''.join(map(str, wed)))
+    result = list(zip(list1, list2))
 
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Thursday' AND  enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql,(start_date,end_date))
-    thurs = cursor.fetchone()
-    thurs = int(''.join(map(str, thurs)))
 
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Friday' AND  enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql, (start_date, end_date))
-    fri = cursor.fetchone()
-    fri = int(''.join(map(str, fri)))
+    df = pd.DataFrame([[ij for ij in i] for i in result])
+    df.rename(columns={0: 'number', 1: 'date'}, inplace=True)
 
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Saturday' AND enter_time >= %s AND  enter_time <= %s """
-    cursor.execute(sql, (start_date, end_date))
-    sat = cursor.fetchone()
-    sat = int(''.join(map(str, sat)))
-
-    sql = """select count(week_day) from vehicle_data_entrance where week_day = 'Sunday' AND   enter_time >= %s AND  enter_time <= %s  """
-    cursor.execute(sql,(start_date,end_date))
-    sun = cursor.fetchone()
-    sun = int(''.join(map(str, sun)))
-
-    labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    weekdays = [mon, tues, wed, thurs, fri, sat, sun]
     data = [go.Bar(
-        x=labels,
-        y=weekdays)]
+        x=df['date'],
+        y=df['number'])]
     fig = go.Figure(data=data)
-    fig.update_layout(title='No of Parking Transactions by Day', xaxis_title='Day',
+    fig.update_layout(title='No of Parking Transactions by Day', xaxis_title='Date',
                      yaxis_title='No of Parking Transactions')
     st.plotly_chart(fig)
 
@@ -618,80 +593,31 @@ elif options == 'Amount of Parking Fee Collected by Day':
     start_date = start_date.strftime("%Y/%m/%d")
     end_date = end_date.strftime("%Y/%m/%d")
 
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Monday' AND  exit_time >= %s AND  exit_time <= %s  """
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where  exit_time >= %s AND  exit_time <= %s  """
     cursor.execute(sql,(start_date,end_date))
-    mon = cursor.fetchone()[0]
-    if mon != None:
-        mon = mon
+    sum_fee = cursor.fetchone()[0]
+    if sum_fee != None:
+        sum_fee = sum_fee
 
     else:
-        mon = 0
+        sum_fee = 0
+
+    st.header("The total parking fee collected from {} to {} is: ".format(start_date, end_date))
+    st.subheader("RM {}.00".format(sum_fee))
 
 
-
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Tuesday' AND   exit_time >= %s AND  exit_time <= %s  """
-    cursor.execute(sql,(start_date,end_date))
-    tues = cursor.fetchone()[0]
-    if tues != None:
-        tues = tues
-
-    else:
-        tues = 0
-
-
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day  = 'Wednesday' AND  exit_time >= %s AND  exit_time <= %s """
+    sql = """select cast(fee as int), exit_date from vehicle_data_exit WHERE exit_time >= %s  AND  exit_time <= %s """
     cursor.execute(sql, (start_date, end_date))
-    wed = cursor.fetchone()[0]
-    if wed != None:
-        wed = wed
-
-    else:
-        wed = 0
+    result = cursor.fetchall()
 
 
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day  = 'Thursday' AND  exit_time >= %s AND  exit_time <= %s """
-    cursor.execute(sql,(start_date,end_date))
-    thurs = cursor.fetchone()[0]
-    if thurs != None:
-        thurs = thurs
-
-    else:
-        thurs = 0
+    df = pd.DataFrame([[ij for ij in i] for i in result])
+    df.rename(columns={0: 'fee', 1: 'exit_date'}, inplace=True)
 
 
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Friday' AND  exit_time >= %s AND  exit_time <= %s """
-    cursor.execute(sql, (start_date, end_date))
-    fri = cursor.fetchone()[0]
-    if fri != None:
-        fri = fri
-
-    else:
-        fri = 0
-
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Saturday' AND exit_time >= %s AND exit_time <= %s """
-    cursor.execute(sql,(start_date,end_date))
-    sat = cursor.fetchone()[0]
-    if sat != None:
-        sat = sat
-
-    else:
-        sat = 0
-
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where week_day = 'Sunday' AND  exit_time >= %s AND  exit_time <= %s  """
-    cursor.execute(sql,(start_date,end_date))
-    sun = cursor.fetchone()[0]
-    if sun != None:
-        sun = sun
-
-    else:
-        sun = 0
-
-
-    labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    amount = [mon,tues,wed,thurs,fri,sat,sun]
-    data = [go.Scatter(x= labels,y=amount)]
+    data = [go.Scatter(x= df['exit_date'],y=df['fee'])]
     fig = go.Figure(data=data)
-    fig.update_layout(title='Amount of Parking Fee Collected by Day',xaxis_title='Day',yaxis_title='Amount of Fee Collected (RM)')
+    fig.update_layout(title='Amount of Parking Fee Collected by Day',xaxis_title='Date',yaxis_title='Amount of Fee Collected (RM)')
     st.plotly_chart(fig)
 
 else:
