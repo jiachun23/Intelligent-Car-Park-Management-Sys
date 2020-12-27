@@ -12,8 +12,6 @@ import psycopg2
 from datetime import datetime as dt
 import pandas as pd
 import plotly.graph_objects as go
-import calendar
-
 
 
 
@@ -187,7 +185,7 @@ def car_recogniser_exit(our_img):
         transforms.RandomRotation(15),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        # transforms.RandomErasing(inplace=True),
+        transforms.RandomErasing(inplace=True),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
@@ -275,7 +273,7 @@ def car_detection_exit():
 # option at the side bar
 options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
                                                     'Parking Database','No of Vehicles in the Parking','No of Parking Transactions by Day',
-                                                    'Amount of Parking Fee Collected by Day'])
+                                                    'Amount of Parking Fee Collected by Day','Payment Gateway'])
 
 # title
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -619,6 +617,79 @@ elif options == 'Amount of Parking Fee Collected by Day':
     fig = go.Figure(data=data)
     fig.update_layout(title='Amount of Parking Fee Collected by Day',xaxis_title='Date',yaxis_title='Amount of Fee Collected (RM)')
     st.plotly_chart(fig)
+
+elif options == 'Payment Gateway':
+
+    st.title("Payment Gateway")
+    html_temp = """
+                     <body style="background-color:red;">
+                     <div style="background-color:teal ;padding:10px">
+                     <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+                     </div>
+                     </body>
+                     """
+
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+
+    # Establishing the connection
+    conn = psycopg2.connect(
+        database="vehicle", user='postgres', password='abc123', host='127.0.0.1', port='5432'
+    )
+    # Setting auto commit false
+    conn.autocommit = True
+
+    # Creating a cursor object using the cursor() method
+    cursor = conn.cursor()
+
+    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
+
+    cursor.execute(sql)
+
+    result = [i[0] for i in cursor.fetchall()]
+
+    st.text("")
+    st.text("")
+    dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
+    selection = dropdown
+
+    exit_date = st.date_input('Vehicle Exit Date: ')
+
+
+    exit_date = exit_date.strftime("%Y/%m/%d")
+
+    cursor.execute(
+        "select cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
+        (selection, exit_date))
+    result = cursor.fetchone()[0]
+    st.subheader("Amount to be paid: RM {:.2f}".format(result))
+
+
+    # if not hasattr(st, 'already_started_server'):
+    #     # Hack the fact that Python modules (like st) only load once to
+    #     # keep track of whether this file already ran.
+    #     st.already_started_server = True
+    #
+    #     st.write('''
+    #         The first time this script executes it will run forever because it's
+    #         running a Flask server.
+    #
+    #         Just close this browser tab and open a new one to see your Streamlit
+    #         app.
+    #     ''')
+    st.text("")
+    st.text("")
+    if st.button("Proceed to Payment"):
+            HtmlFile = open("test.html", 'r', encoding='utf-8')
+            source = HtmlFile.read()
+            st.markdown(source, unsafe_allow_html=True)
+
+            st.text("")
+            st.text("")
+            st.subheader("Pay with E-wallet with the QR Code below:")
+            image = "payment.png"
+            st.image(image,width=None)
+
 
 else:
     st.text("The option is not exist. Please try again.")
