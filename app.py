@@ -14,7 +14,6 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
-
 def default_device():
     '''Indicate availablibity of GPU, otherwise return CPU'''
     if torch.cuda.is_available():
@@ -271,7 +270,8 @@ def car_detection_exit():
 
 
 # option at the side bar
-options = st.sidebar.selectbox('Select an Option', ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
+st.sidebar.title("Navigation Panel")
+options = st.sidebar.radio("Go to",['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
                                                     'Parking Database','No of Vehicles in the Parking','No of Parking Transactions by Day',
                                                     'Amount of Parking Fee Collected by Day','Payment Gateway'])
 
@@ -679,16 +679,25 @@ elif options == 'Payment Gateway':
     #     ''')
     st.text("")
     st.text("")
-    if st.button("Proceed to Payment"):
-            HtmlFile = open("test.html", 'r', encoding='utf-8')
-            source = HtmlFile.read()
-            st.markdown(source, unsafe_allow_html=True)
+    st.header("Payment Details")
+    st.image("creditcard.PNG",width=None)
+    st.text_input("CARD NUMBER: ")
+    st.text_input("EXPIRATION DATE: ", " / ")
+    st.text_input("CVV CODE: ")
+    st.text_input("CARD OWNER: ")
 
-            st.text("")
-            st.text("")
-            st.subheader("Pay with E-wallet with the QR Code below:")
-            image = "payment.png"
-            st.image(image,width=None)
+    if st.button("Pay Now"):
+        HtmlFile = open("success.html", 'r', encoding='utf-8')
+        source = HtmlFile.read()
+        st.markdown(source, unsafe_allow_html=True)
+
+    st.text("")
+    st.text("")
+    st.subheader("Pay with E-wallet with the QR Code below:")
+    image = "payment.png"
+    st.image(image,width=None)
+
+
 
 
 else:
