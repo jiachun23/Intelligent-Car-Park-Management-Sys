@@ -12,7 +12,7 @@ import psycopg2
 from datetime import datetime as dt
 import pandas as pd
 import plotly.graph_objects as go
-
+import webbrowser
 
 def default_device():
     '''Indicate availablibity of GPU, otherwise return CPU'''
@@ -659,11 +659,14 @@ elif options == 'Payment Gateway':
     exit_date = exit_date.strftime("%Y/%m/%d")
 
     cursor.execute(
-        "select cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
+        "SELECT cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
         (selection, exit_date))
-    result = cursor.fetchone()[0]
-    st.subheader("Amount to be paid: RM {:.2f}".format(result))
+    amt = cursor.fetchone()[0]
+    st.subheader("Amount to be paid: RM {:.2f}".format(amt))
 
+
+    cursor.execute("SELECT vehicle_brand FROM vehicle_data_exit WHERE plate_number = %s",(selection,))
+    vehicle_brand = cursor.fetchone()[0]
 
     # if not hasattr(st, 'already_started_server'):
     #     # Hack the fact that Python modules (like st) only load once to
@@ -687,9 +690,27 @@ elif options == 'Payment Gateway':
     st.text_input("CARD OWNER: ")
 
     if st.button("Pay Now"):
-        HtmlFile = open("success.html", 'r', encoding='utf-8')
-        source = HtmlFile.read()
-        st.markdown(source, unsafe_allow_html=True)
+        st.text("=========================================================")
+        st.text("--------------------  PAYMENT RECEIPT -------------------")
+        st.text("=========================================================")
+        st.text("")
+        st.text("Vehicle Model :             {}".format(vehicle_brand))
+        st.text("")
+        st.text("Vehicle Plate Number :      {}".format(selection))
+        st.text("")
+        st.text("Vehicle Exit Date:          {}".format(exit_date))
+        st.text("")
+        st.text("Total Parking Fee Amount:   {:.2f}".format(amt))
+        st.text("")
+        st.text("")
+        st.text("")
+        st.text("")
+        st.text("----------------- Payment is successful! ----------------")
+        st.text("-------------- Thank you and see you again!! ------------")
+        st.text("")
+        st.text("")
+        st.text("=========================================================")
+        st.text("=========================================================")
 
     st.text("")
     st.text("")
