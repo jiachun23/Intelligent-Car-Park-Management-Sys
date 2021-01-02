@@ -466,6 +466,9 @@ elif options == 'Parking Database':
     df = pd.DataFrame(sql, columns=['vehicle_brand', 'plate_number', 'enter_time', 'exit_time','duration','fee'])
     df
 
+    # save as excel
+    df.to_excel(r'parking_database.xlsx', index=False, header=True)
+
 
 
 
@@ -491,13 +494,18 @@ elif options == 'No of Vehicles in the Parking':
     cursor = conn.cursor()
     cursor1 = conn.cursor()
 
-    sql = """select count(plate_number) from vehicle_data_entrance"""
-    cursor.execute(sql)
+
+    exit_date = st.date_input('Date: ')
+
+    exit_date = exit_date.strftime("%Y/%m/%d")
+
+    sql = """select count(plate_number) from vehicle_data_entrance where enter_date = %s"""
+    cursor.execute(sql,(exit_date,))
     ent = cursor.fetchone()
     ent = int(''.join(map(str, ent)))
 
-    sql_exit = """select count(plate_number) from vehicle_data_exit"""
-    cursor1.execute(sql_exit)
+    sql_exit = """select count(plate_number) from vehicle_data_exit where exit_date = %s """
+    cursor1.execute(sql_exit,(exit_date,))
     ext = cursor1.fetchone()
     ext = int(''.join(map(str, ext)))
 
@@ -563,6 +571,8 @@ elif options == 'No of Parking Transactions by Day':
                      yaxis_title='No of Parking Transactions')
     st.plotly_chart(fig)
 
+    # save as excel
+    df.to_excel(r'transactions_by_day.xlsx', index=False, header=True)
 
 elif options == 'Amount of Parking Fee Collected by Day':
 
@@ -613,10 +623,15 @@ elif options == 'Amount of Parking Fee Collected by Day':
     df.rename(columns={0: 'fee', 1: 'exit_date'}, inplace=True)
 
 
+
     data = [go.Scatter(x= df['exit_date'],y=df['fee'])]
     fig = go.Figure(data=data)
     fig.update_layout(title='Amount of Parking Fee Collected by Day',xaxis_title='Date',yaxis_title='Amount of Fee Collected (RM)')
     st.plotly_chart(fig)
+
+    #save as excel
+    df.to_excel(r'fee_collected_by_day.xlsx', index= False, header=True)
+
 
 elif options == 'Payment Gateway':
 
