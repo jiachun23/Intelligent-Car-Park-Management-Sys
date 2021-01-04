@@ -12,7 +12,7 @@ import psycopg2
 from datetime import datetime as dt
 import pandas as pd
 import plotly.graph_objects as go
-import webbrowser
+import re
 
 def default_device():
     '''Indicate availablibity of GPU, otherwise return CPU'''
@@ -699,10 +699,19 @@ elif options == 'Payment Gateway':
     st.text("")
     st.header("Payment Details")
     st.image("creditcard.PNG",width=None)
-    st.text_input("CARD NUMBER: ")
+    card_num = st.text_input("CARD NUMBER: ")
+    card_type = st.selectbox("CARD TYPE: ",["Visa", "AMEX", "MasterCard"])
     st.text_input("EXPIRATION DATE: ", " / ")
     st.text_input("CVV CODE: ")
     st.text_input("CARD OWNER: ")
+
+
+    def mask(string, digits_to_keep=4, mask_char='X'):
+
+        num_of_digits = sum(map(str.isdigit, string))
+        digits_to_mask = num_of_digits - digits_to_keep
+        masked_string = re.sub('\d', mask_char, string, digits_to_mask)
+        return masked_string
 
     if st.button("Pay Now"):
         st.text("=========================================================")
@@ -718,7 +727,9 @@ elif options == 'Payment Gateway':
         st.text("Total Parking Fee Amount:   {:.2f}".format(amt))
         st.text("")
         st.text("")
+        st.text("Paid with:                  {}".format(card_type))
         st.text("")
+        st.text("Card Number:                {}".format(mask(card_num)))
         st.text("")
         st.text("----------------- Payment is successful! ----------------")
         st.text("-------------- Thank you and see you again!! ------------")
@@ -727,11 +738,6 @@ elif options == 'Payment Gateway':
         st.text("=========================================================")
         st.text("=========================================================")
 
-    st.text("")
-    st.text("")
-    st.subheader("Pay with E-wallet with the QR Code below:")
-    image = "payment.png"
-    st.image(image,width=None)
 
 
 
