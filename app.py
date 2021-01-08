@@ -14,6 +14,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import re
 
+
 def default_device():
     '''Indicate availablibity of GPU, otherwise return CPU'''
     if torch.cuda.is_available():
@@ -102,9 +103,6 @@ car_model = torch.load(path, map_location=torch.device('cpu'))
 def current_time():
     return datetime.datetime.now().replace(microsecond=0)
 
-# def findDay(date):
-#     day = datetime.datetime.strptime(date, '%Y %m %d').weekday()
-#     return (calendar.day_name[day])
 
 def car_recogniser_entrance(our_img):
     # Establishing the connection
@@ -154,12 +152,10 @@ def car_recogniser_entrance(our_img):
     st.text("The vehicle enter the parking at:")
     enter_time
     time_enter = enter_time.strftime("%Y/%m/%d, %H:%M:%S")
-    day_enter = enter_time.strftime("%Y %m %d")
-
-
+    day_enter = enter_time.strftime("%Y/%m/%d")
 
     sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, enter_date) VALUES(%s,%s,%s,%s)"""
-    record_to_enter = (predicted_val, num_plate, time_enter,  day_enter)
+    record_to_enter = (predicted_val, num_plate, time_enter, day_enter)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -210,12 +206,16 @@ def car_recogniser_exit(our_img):
     st.text("Detected license plate number: ")
     num_plate = ' '.join([str(elem) for elem in bounds])
     num_plate
+    # matched = re.match("[A-Za-z]{1,3}{}[0-9]{1,4}$", num_plate)
+    # checked = bool(matched)
+    # if checked == True:
+    #     matched
 
     ext_time = current_time()
     st.text("The vehicle enter the parking at:")
     ext_time
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
-    day_exit = ext_time.strftime("%Y %m %d")
+    day_exit = ext_time.strftime("%Y/%m/%d")
 
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s)"""
     record_to_enter = (predicted_val, num_plate, time_exit, day_exit)
@@ -271,9 +271,10 @@ def car_detection_exit():
 
 # option at the side bar
 st.sidebar.title("Navigation Panel")
-options = st.sidebar.radio("Go to",['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
-                                                    'Parking Database','No of Vehicles in the Parking','No of Parking Transactions by Day',
-                                                    'Amount of Parking Fee Collected by Day','Payment Gateway'])
+options = st.sidebar.radio("Go to", ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
+                                     'Parking Database', 'No of Vehicles in the Parking',
+                                     'No of Parking Transactions by Day',
+                                     'Amount of Parking Fee Collected by Day', 'Payment Gateway'])
 
 # title
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -324,17 +325,18 @@ elif options == 'Parking Fee Calculation':
 
     result = [i[0] for i in cursor.fetchall()]
 
-
     dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
     selection = dropdown
     st.text("Vehicle Entrance Time:")
-    cursor.execute("select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s",
+    cursor.execute(
+        "select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s",
         (selection,))
     result_enter = str(cursor.fetchone()[0])
     result_enter
 
     st.text("Vehicle Exit Time:")
-    cursor.execute("select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s",
+    cursor.execute(
+        "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s",
         (selection,))
     result_exit = str(cursor.fetchone()[0])
     if result_exit != None:
@@ -463,7 +465,7 @@ elif options == 'Parking Database':
     st.text("\n")
     st.text("\n")
     st.text("\n")
-    df = pd.DataFrame(sql, columns=['vehicle_brand', 'plate_number', 'enter_time', 'exit_time','duration','fee'])
+    df = pd.DataFrame(sql, columns=['vehicle_brand', 'plate_number', 'enter_time', 'exit_time', 'duration', 'fee'])
     df
 
     # save as excel
@@ -494,22 +496,29 @@ elif options == 'No of Vehicles in the Parking':
     cursor = conn.cursor()
     cursor1 = conn.cursor()
 
-
     exit_date = st.date_input('Date: ')
 
     exit_date = exit_date.strftime("%Y/%m/%d")
 
     sql = """select count(plate_number) from vehicle_data_entrance where enter_date = %s"""
-    cursor.execute(sql,(exit_date,))
+    cursor.execute(sql, (exit_date,))
     ent = cursor.fetchone()
     ent = int(''.join(map(str, ent)))
+    if ent != None:
+        ent = ent
+    else:
+        ent = 0
 
     sql_exit = """select count(plate_number) from vehicle_data_exit where exit_date = %s """
-    cursor1.execute(sql_exit,(exit_date,))
+    cursor1.execute(sql_exit, (exit_date,))
     ext = cursor1.fetchone()
     ext = int(''.join(map(str, ext)))
+    if ext != None:
+        ext = ext
+    else:
+        ext = 0
 
-    remain = ent-ext
+    remain = ent - ext
     left = ext
 
     labels = ['Remaining in Car Park', 'Left the Car Park']
@@ -546,12 +555,9 @@ elif options == 'No of Parking Transactions by Day':
     start_date = start_date.strftime("%Y/%m/%d")
     end_date = end_date.strftime("%Y/%m/%d")
 
-
     sql = """select count(*) from vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s group by enter_date  """
-    cursor.execute(sql,(start_date,end_date))
+    cursor.execute(sql, (start_date, end_date))
     list1 = [item[0] for item in cursor.fetchall()]
-
-
 
     sql = """select enter_date from vehicle_data_entrance WHERE  enter_time >= %s AND  enter_time <= %s group by enter_date """
     cursor.execute(sql, (start_date, end_date))
@@ -563,12 +569,13 @@ elif options == 'No of Parking Transactions by Day':
     df = pd.DataFrame([[ij for ij in i] for i in result])
     df.rename(columns={0: 'number', 1: 'date'}, inplace=True)
 
+    df_sorted = df.sort_values('date')
     data = [go.Bar(
-        x=df['date'],
-        y=df['number'])]
+        x=df_sorted['date'],
+        y=df_sorted['number'])]
     fig = go.Figure(data=data)
     fig.update_layout(title='No of Parking Transactions by Day', xaxis_title='Date',
-                     yaxis_title='No of Parking Transactions')
+                      yaxis_title='No of Parking Transactions')
     st.plotly_chart(fig)
 
     # save as excel
@@ -601,8 +608,8 @@ elif options == 'Amount of Parking Fee Collected by Day':
     start_date = start_date.strftime("%Y/%m/%d")
     end_date = end_date.strftime("%Y/%m/%d")
 
-    sql = """select cast(sum(fee) as int) from vehicle_data_exit where  exit_time >= %s AND  exit_time <= %s  """
-    cursor.execute(sql,(start_date,end_date))
+    sql = """select cast(sum(fee) as int) from vehicle_data_exit where  exit_date >= %s AND  exit_date <= %s  """
+    cursor.execute(sql, (start_date, end_date))
     sum_fee = cursor.fetchone()[0]
     if sum_fee != None:
         sum_fee = sum_fee
@@ -613,24 +620,36 @@ elif options == 'Amount of Parking Fee Collected by Day':
     st.header("The total parking fee collected from {} to {} is: ".format(start_date, end_date))
     st.subheader("RM {}.00".format(sum_fee))
 
+    # sql = """select cast(sum(fee) as int), exit_date from vehicle_data_exit WHERE exit_date >= %s  AND  exit_date <= %s """
+    # cursor.execute(sql, (start_date,))
+    # result = cursor.fetchall()
 
-    sql = """select cast(fee as int), exit_date from vehicle_data_exit WHERE exit_time >= %s  AND  exit_time <= %s """
+    sql = """ select cast(sum(fee) as int) from vehicle_data_exit where exit_date >= %s  AND  exit_date <= %s group by exit_date"""
+    cursor.execute(sql, (start_date,end_date))
+    list1 = [item[0] for item in cursor.fetchall()]
+
+
+
+    sql = """select exit_date from vehicle_data_exit where exit_date >= %s AND  exit_date <= %s group by exit_date"""
     cursor.execute(sql, (start_date, end_date))
-    result = cursor.fetchall()
+    list2 = [item[0] for item in cursor.fetchall()]
 
+
+    result = list(zip(list1, list2))
+    
 
     df = pd.DataFrame([[ij for ij in i] for i in result])
     df.rename(columns={0: 'fee', 1: 'exit_date'}, inplace=True)
 
-
-
-    data = [go.Scatter(x= df['exit_date'],y=df['fee'])]
+    df_sorted = df.sort_values('exit_date')
+    data = [go.Scatter(x= df_sorted['exit_date'], y= df_sorted['fee'])]
     fig = go.Figure(data=data)
-    fig.update_layout(title='Amount of Parking Fee Collected by Day',xaxis_title='Date',yaxis_title='Amount of Fee Collected (RM)')
+    fig.update_layout(title='Amount of Parking Fee Collected by Day', xaxis_title='Date',
+                      yaxis_title='Amount of Fee Collected (RM)')
     st.plotly_chart(fig)
 
-    #save as excel
-    df.to_excel(r'fee_collected_by_day.xlsx', index= False, header=True)
+    # save as excel
+    df.to_excel(r'fee_collected_by_day.xlsx', index=False, header=True)
 
 
 elif options == 'Payment Gateway':
@@ -670,7 +689,6 @@ elif options == 'Payment Gateway':
 
     exit_date = st.date_input('Vehicle Exit Date: ')
 
-
     exit_date = exit_date.strftime("%Y/%m/%d")
 
     cursor.execute(
@@ -679,8 +697,7 @@ elif options == 'Payment Gateway':
     amt = cursor.fetchone()[0]
     st.subheader("Amount to be paid: RM {:.2f}".format(amt))
 
-
-    cursor.execute("SELECT vehicle_brand FROM vehicle_data_exit WHERE plate_number = %s",(selection,))
+    cursor.execute("SELECT vehicle_brand FROM vehicle_data_exit WHERE plate_number = %s", (selection,))
     vehicle_brand = cursor.fetchone()[0]
 
     # if not hasattr(st, 'already_started_server'):
@@ -698,9 +715,9 @@ elif options == 'Payment Gateway':
     st.text("")
     st.text("")
     st.header("Payment Details")
-    st.image("creditcard.PNG",width=None)
+    st.image("creditcard.PNG", width=None)
     card_num = st.text_input("CARD NUMBER: ")
-    card_type = st.selectbox("CARD TYPE: ",["Visa", "AMEX", "MasterCard"])
+    card_type = st.selectbox("CARD TYPE: ", ["Visa", "AMEX", "MasterCard"])
     st.text_input("EXPIRATION DATE: ", " / ")
     st.text_input("CVV CODE: ")
     st.text_input("CARD OWNER: ")
@@ -712,6 +729,7 @@ elif options == 'Payment Gateway':
         digits_to_mask = num_of_digits - digits_to_keep
         masked_string = re.sub('\d', mask_char, string, digits_to_mask)
         return masked_string
+
 
     if st.button("Pay Now"):
         st.text("=========================================================")
