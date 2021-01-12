@@ -194,7 +194,7 @@ def car_recogniser_exit(our_img):
 
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
-    # comparing algo
+
     st.text("Detected vehicle model: ")
     predicted_val
 
@@ -305,7 +305,6 @@ elif options == 'Parking Fee Calculation':
 
     # Creating a cursor object using the cursor() method
     cursor = conn.cursor()
-
     cursor1 = conn.cursor()
 
     st.title("Parking Fee Calculation")
@@ -319,30 +318,37 @@ elif options == 'Parking Fee Calculation':
     st.markdown(html_temp, unsafe_allow_html=True)
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
-    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
+    date = st.date_input('Parking Date: ')
 
-    cursor.execute(sql)
+    date = date.strftime("%Y/%m/%d")
+
+    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance where vehicle_data_entrance.enter_date = %s order by vehicle_data_entrance.plate_number  """
+
+    cursor.execute(sql,(date,))
 
     result = [i[0] for i in cursor.fetchall()]
+
+
 
     dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
     selection = dropdown
     st.text("Vehicle Entrance Time:")
     cursor.execute(
-        "select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s",
-        (selection,))
+        "select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s and vehicle_data_entrance.enter_date = %s",
+        (selection,date))
     result_enter = str(cursor.fetchone()[0])
     result_enter
 
     st.text("Vehicle Exit Time:")
     cursor.execute(
-        "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s",
-        (selection,))
+        "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s and vehicle_data_exit.exit_date = %s ",
+        (selection,date))
     result_exit = str(cursor.fetchone()[0])
     if result_exit != None:
         result_exit
     else:
-        st.text("The vehicle has not leave the parking yet.")
+        result_exit = "Vehicle has not leave the parking yet."
+        result_exit
 
     # shows the calculation of parking duration and fee
     if result_enter and result_exit != None:
@@ -676,9 +682,13 @@ elif options == 'Payment Gateway':
     # Creating a cursor object using the cursor() method
     cursor = conn.cursor()
 
-    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance order by vehicle_data_entrance.plate_number """
+    date = st.date_input('Parking Date: ')
 
-    cursor.execute(sql)
+    date = date.strftime("%Y/%m/%d")
+
+    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance where vehicle_data_entrance.enter_date = %s order by vehicle_data_entrance.plate_number  """
+
+    cursor.execute(sql,(date,))
 
     result = [i[0] for i in cursor.fetchall()]
 
@@ -687,31 +697,16 @@ elif options == 'Payment Gateway':
     dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
     selection = dropdown
 
-    exit_date = st.date_input('Vehicle Exit Date: ')
-
-    exit_date = exit_date.strftime("%Y/%m/%d")
 
     cursor.execute(
         "SELECT cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
-        (selection, exit_date))
+        (selection, date))
     amt = cursor.fetchone()[0]
     st.subheader("Amount to be paid: RM {:.2f}".format(amt))
 
     cursor.execute("SELECT vehicle_brand FROM vehicle_data_exit WHERE plate_number = %s", (selection,))
     vehicle_brand = cursor.fetchone()[0]
 
-    # if not hasattr(st, 'already_started_server'):
-    #     # Hack the fact that Python modules (like st) only load once to
-    #     # keep track of whether this file already ran.
-    #     st.already_started_server = True
-    #
-    #     st.write('''
-    #         The first time this script executes it will run forever because it's
-    #         running a Flask server.
-    #
-    #         Just close this browser tab and open a new one to see your Streamlit
-    #         app.
-    #     ''')
     st.text("")
     st.text("")
     st.header("Payment Details")
@@ -740,7 +735,7 @@ elif options == 'Payment Gateway':
         st.text("")
         st.text("Vehicle Plate Number :      {}".format(selection))
         st.text("")
-        st.text("Vehicle Exit Date:          {}".format(exit_date))
+        st.text("Vehicle Exit Date:          {}".format(date))
         st.text("")
         st.text("Total Parking Fee Amount:   {:.2f}".format(amt))
         st.text("")
