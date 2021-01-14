@@ -198,18 +198,19 @@ def car_recogniser_exit(our_img):
     st.text("Detected vehicle model: ")
     predicted_val
 
+
     # converting PIL object into numpy array for ocr
     new_array = np.array(car_image)
+
+    #
+
     reader = easyocr.Reader(['en'], gpu=False)
     bounds = reader.readtext(new_array, detail=0)
 
     st.text("Detected license plate number: ")
     num_plate = ' '.join([str(elem) for elem in bounds])
     num_plate
-    # matched = re.match("[A-Za-z]{1,3}{}[0-9]{1,4}$", num_plate)
-    # checked = bool(matched)
-    # if checked == True:
-    #     matched
+
 
     ext_time = current_time()
     st.text("The vehicle enter the parking at:")
@@ -217,7 +218,7 @@ def car_recogniser_exit(our_img):
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
     day_exit = ext_time.strftime("%Y/%m/%d")
 
-    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s)"""
+    sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s) """
     record_to_enter = (predicted_val, num_plate, time_exit, day_exit)
     cursor.execute(sql, record_to_enter)
     conn.commit()
@@ -466,7 +467,8 @@ elif options == 'Parking Database':
                                vehicle_data_exit.duration, vehicle_data_exit.fee
                                from vehicle_data_entrance 
                                left join vehicle_data_exit ON 
-                               vehicle_data_entrance.plate_number = vehicle_data_exit.plate_number 
+                               vehicle_data_entrance.plate_number = vehicle_data_exit.plate_number and
+                               vehicle_data_entrance.enter_date = vehicle_data_exit.exit_date
 			                   order by vehicle_data_entrance.plate_number """, conn)
     st.text("\n")
     st.text("\n")
@@ -626,9 +628,6 @@ elif options == 'Amount of Parking Fee Collected by Day':
     st.header("The total parking fee collected from {} to {} is: ".format(start_date, end_date))
     st.subheader("RM {}.00".format(sum_fee))
 
-    # sql = """select cast(sum(fee) as int), exit_date from vehicle_data_exit WHERE exit_date >= %s  AND  exit_date <= %s """
-    # cursor.execute(sql, (start_date,))
-    # result = cursor.fetchall()
 
     sql = """ select cast(sum(fee) as int) from vehicle_data_exit where exit_date >= %s  AND  exit_date <= %s group by exit_date"""
     cursor.execute(sql, (start_date,end_date))
