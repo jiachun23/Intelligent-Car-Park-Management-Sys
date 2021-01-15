@@ -195,28 +195,43 @@ def car_recogniser_exit(our_img):
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
 
-    st.text("Detected vehicle model: ")
-    predicted_val
+
 
 
     # converting PIL object into numpy array for ocr
     new_array = np.array(car_image)
 
-    #
-
     reader = easyocr.Reader(['en'], gpu=False)
     bounds = reader.readtext(new_array, detail=0)
 
-    st.text("Detected license plate number: ")
-    num_plate = ' '.join([str(elem) for elem in bounds])
-    num_plate
 
+    num_plate = ' '.join([str(elem) for elem in bounds])
 
     ext_time = current_time()
-    st.text("The vehicle enter the parking at:")
-    ext_time
+
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
     day_exit = ext_time.strftime("%Y/%m/%d")
+
+    sql = "select vehicle_brand from vehicle_data_entrance where plate_number = %s and enter_date = %s"
+
+    cursor.execute(sql,(num_plate,day_exit))
+    result = str(cursor.fetchone()[0])
+    if predicted_val != result:
+        predicted_val = result
+    else:
+        predicted_val = predicted_val
+
+
+    st.text("Detected vehicle model: ")
+    predicted_val
+
+    st.text("Detected license plate number: ")
+    num_plate
+
+    st.text("The vehicle exit the parking at:")
+    ext_time
+
+
 
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s) """
     record_to_enter = (predicted_val, num_plate, time_exit, day_exit)
@@ -345,11 +360,12 @@ elif options == 'Parking Fee Calculation':
         "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s and vehicle_data_exit.exit_date = %s ",
         (selection,date))
     result_exit = str(cursor.fetchone()[0])
-    if result_exit != None:
-        result_exit
+    if result_exit == None:
+        result_exit = "Vehicle hasn't leave the car park."
+
     else:
-        result_exit = "Vehicle has not leave the parking yet."
-        result_exit
+        result_exit = result_exit
+
 
     # shows the calculation of parking duration and fee
     if result_enter and result_exit != None:
@@ -360,6 +376,7 @@ elif options == 'Parking Fee Calculation':
         duration
 
     else:
+        duration = 0
         st.text("The vehicle is still in the parking.")
 
     st.header("Total Parking Fee:")
