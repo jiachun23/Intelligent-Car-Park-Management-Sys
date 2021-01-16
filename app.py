@@ -195,9 +195,6 @@ def car_recogniser_exit(our_img):
     # return prediction label
     predicted_val = ([value for value in labels_dict.values()][prediction])
 
-
-
-
     # converting PIL object into numpy array for ocr
     new_array = np.array(car_image)
 
@@ -213,11 +210,11 @@ def car_recogniser_exit(our_img):
     day_exit = ext_time.strftime("%Y/%m/%d")
 
     sql = "select vehicle_brand from vehicle_data_entrance where plate_number = %s and enter_date = %s"
-
     cursor.execute(sql,(num_plate,day_exit))
-    result = str(cursor.fetchone()[0])
-    if predicted_val != result:
-        predicted_val = result
+    brand = str(cursor.fetchone()[0])
+
+    if predicted_val != brand:
+        predicted_val = brand
     else:
         predicted_val = predicted_val
 
