@@ -103,6 +103,13 @@ car_model = torch.load(path, map_location=torch.device('cpu'))
 def current_time():
     return datetime.datetime.now().replace(microsecond=0)
 
+def Convert(string):
+    li = list(string.split(" "))
+    return li
+
+def swapPositions(list, pos1, pos2):
+    list[pos1], list[pos2] = list[pos2], list[pos1]
+    return list
 
 def car_recogniser_entrance(our_img):
     # Establishing the connection
@@ -146,7 +153,17 @@ def car_recogniser_entrance(our_img):
 
     st.text("Detected license plate number: ")
     num_plate = ' '.join([str(elem) for elem in bounds])
-    num_plate
+    result_list = re.findall(r'^[A-Z | a-z]{1,5}\d{1,4}$', num_plate)
+
+    if len(result_list) == 0:
+        result_list = re.findall(r'^\d{1,4}[A-Z | a-z]{1,5}$', num_plate)
+        text = ' '.join([str(elem) for elem in result_list])
+        converted_text = Convert(text)
+        result_list = swapPositions(converted_text, 0, 1)
+
+    result_text = ' '.join([str(elem) for elem in result_list])
+    result_text
+
 
     enter_time = current_time()
     st.text("The vehicle enter the parking at:")
@@ -155,7 +172,7 @@ def car_recogniser_entrance(our_img):
     day_enter = enter_time.strftime("%Y/%m/%d")
 
     sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, enter_date) VALUES(%s,%s,%s,%s)"""
-    record_to_enter = (predicted_val, num_plate, time_enter, day_enter)
+    record_to_enter = (predicted_val, result_text, time_enter, day_enter)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -201,8 +218,17 @@ def car_recogniser_exit(our_img):
     reader = easyocr.Reader(['en'], gpu=False)
     bounds = reader.readtext(new_array, detail=0)
 
-
     num_plate = ' '.join([str(elem) for elem in bounds])
+    result_list = re.findall(r'^[A-Z | a-z]{1,5}\d{1,4}$', num_plate)
+
+    if len(result_list) == 0:
+        result_list = re.findall(r'^\d{1,4}[A-Z | a-z]{1,5}$', num_plate)
+        text = ' '.join([str(elem) for elem in result_list])
+        converted_text = Convert(text)
+        result_list = swapPositions(converted_text, 0, 1)
+
+    result_text = ' '.join([str(elem) for elem in result_list])
+
 
     ext_time = current_time()
 
@@ -210,7 +236,7 @@ def car_recogniser_exit(our_img):
     day_exit = ext_time.strftime("%Y/%m/%d")
 
     sql = "select vehicle_brand from vehicle_data_entrance where plate_number = %s and enter_date = %s"
-    cursor.execute(sql,(num_plate,day_exit))
+    cursor.execute(sql,(result_text,day_exit))
     brand = str(cursor.fetchone()[0])
 
     if predicted_val != brand:
@@ -223,7 +249,7 @@ def car_recogniser_exit(our_img):
     predicted_val
 
     st.text("Detected license plate number: ")
-    num_plate
+    result_text
 
     st.text("The vehicle exit the parking at:")
     ext_time
@@ -231,7 +257,7 @@ def car_recogniser_exit(our_img):
 
 
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s) """
-    record_to_enter = (predicted_val, num_plate, time_exit, day_exit)
+    record_to_enter = (predicted_val, result_text, time_exit, day_exit)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
