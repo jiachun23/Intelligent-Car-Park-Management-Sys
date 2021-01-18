@@ -805,7 +805,7 @@ elif options == 'Payment Gateway':
             st.text("")
             st.text("Vehicle Exit Date:          {}".format(date))
             st.text("")
-            st.text("Total Parking Fee Amount:   {:.2f}".format(amt))
+            st.text("Total Parking Fee Amount:   RM {:.2f}".format(amt))
             st.text("")
             st.text("")
             st.text("Paid with:                  {}".format(card_type))
