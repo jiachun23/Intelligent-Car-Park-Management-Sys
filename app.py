@@ -367,7 +367,7 @@ elif options == 'Parking Fee Calculation':
 
     date = date.strftime("%Y/%m/%d")
 
-    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance where vehicle_data_entrance.enter_date = %s order by vehicle_data_entrance.plate_number  """
+    sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance where vehicle_data_entrance.enter_date = %s order by vehicle_data_entrance.plate_number """
 
     cursor.execute(sql,(date,))
 
@@ -388,102 +388,111 @@ elif options == 'Parking Fee Calculation':
     cursor.execute(
         "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s and vehicle_data_exit.exit_date = %s ",
         (selection,date))
-    result_exit = str(cursor.fetchone()[0])
-    if result_exit == None:
-        result_exit = "Vehicle hasn't leave the car park."
+    cursor1.execute(
+        "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s and vehicle_data_exit.exit_date = %s ",
+        (selection, date))
+
+    result_exit = cursor.fetchall()
+
+    if len(result_exit) is 0:
+        none_string = "None"
+        none_string
+        st.subheader("The vehicle has not leave the parking. ")
+
 
     else:
-        result_exit = result_exit
+        result_exit = str(cursor1.fetchone()[0])
+        result_exit
+
 
 
     # shows the calculation of parking duration and fee
-    if result_enter and result_exit != None:
+    if len(result_exit) is not 0:
         st.text("Total parking duration (in minutes):")
         time_enter = dt.strptime(result_enter, "%Y/%m/%d, %H:%M:%S")
         time_exit = dt.strptime(result_exit, "%Y/%m/%d, %H:%M:%S")
         duration = (time_exit - time_enter) // datetime.timedelta(minutes=1)
         duration
 
-    else:
-        duration = 0
-        st.text("The vehicle is still in the parking.")
-
-    st.header("Total Parking Fee:")
-    if 0 <= duration <= 15:
-        fee = 0.00
-        st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        st.header("Total Parking Fee:")
+        if 0 <= duration <= 15:
+            fee = 0.00
+            st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
 
-    elif 15 <= duration <= 60:
-        fee = 2.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 15 <= duration <= 60:
+            fee = 2.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
-    elif 60 <= duration <= 120:
-        fee = 3.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 60 <= duration <= 120:
+            fee = 3.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
-    elif 120 <= duration <= 180:
-        fee = 4.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
-
-
-    elif 180 <= duration <= 240:
-        fee = 5.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 120 <= duration <= 180:
+            fee = 4.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
 
-    elif 240 <= duration <= 300:
-        fee = 6.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 180 <= duration <= 240:
+            fee = 5.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
 
-    elif 300 <= duration <= 360:
-        fee = 7.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 240 <= duration <= 300:
+            fee = 6.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
 
-    elif 360 <= duration <= 420:
-        fee = 8.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 300 <= duration <= 360:
+            fee = 7.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
 
-    elif 420 <= duration <= 480:
-        fee = 9.00
-        st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+        elif 360 <= duration <= 420:
+            fee = 8.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
 
-    else:
-        fee = 10.00
-        st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-        sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-        record_to_enter = (duration, fee, (selection,))
-        cursor1.execute(sql, record_to_enter)
+
+        elif 420 <= duration <= 480:
+            fee = 9.00
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
+
+        else:
+            fee = 10.00
+            st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
+            record_to_enter = (duration, fee, (selection,))
+            cursor1.execute(sql, record_to_enter)
+
+
+
 
 
 
@@ -548,7 +557,7 @@ elif options == 'No of Vehicles in the Parking':
     # Setting auto commit false
     conn.autocommit = True
     cursor = conn.cursor()
-    cursor1 = conn.cursor()
+
 
     exit_date = st.date_input('Date: ')
 
@@ -603,7 +612,7 @@ elif options == 'No of Parking Transactions by Day':
     conn.autocommit = True
     cursor = conn.cursor()
 
-    start_date = st.date_input('Starting Date: ')
+    start_date = st.date_input('Starting Date: ', datetime.date(2021,1,1))
     end_date = st.date_input('End Date: ')
 
     start_date = start_date.strftime("%Y/%m/%d")
@@ -656,7 +665,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
     conn.autocommit = True
     cursor = conn.cursor()
 
-    start_date = st.date_input('Starting Date: ')
+    start_date = st.date_input('Starting Date: ',datetime.date(2021,1,1))
     end_date = st.date_input('End Date: ')
 
     start_date = start_date.strftime("%Y/%m/%d")
@@ -726,6 +735,7 @@ elif options == 'Payment Gateway':
 
     # Creating a cursor object using the cursor() method
     cursor = conn.cursor()
+    cursor1 = conn.cursor()
 
     date = st.date_input('Parking Date: ')
 
@@ -746,55 +756,68 @@ elif options == 'Payment Gateway':
     cursor.execute(
         "SELECT cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
         (selection, date))
-    amt = cursor.fetchone()[0]
-    st.subheader("Amount to be paid: RM {:.2f}".format(amt))
-
-    cursor.execute("SELECT vehicle_brand FROM vehicle_data_exit WHERE plate_number = %s", (selection,))
-    vehicle_brand = cursor.fetchone()[0]
-
-    st.text("")
-    st.text("")
-    st.header("Payment Details")
-    st.image("creditcard.PNG", width=None)
-    card_num = st.text_input("CARD NUMBER: ")
-    card_type = st.selectbox("CARD TYPE: ", ["Visa", "AMEX", "MasterCard"])
-    st.text_input("EXPIRATION DATE: ", " / ")
-    st.text_input("CVV CODE: ")
-    st.text_input("CARD OWNER: ")
+    cursor1.execute(
+        "SELECT cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
+        (selection, date))
 
 
-    def mask(string, digits_to_keep=4, mask_char='X'):
+    amt = cursor.fetchall()
 
-        num_of_digits = sum(map(str.isdigit, string))
-        digits_to_mask = num_of_digits - digits_to_keep
-        masked_string = re.sub('\d', mask_char, string, digits_to_mask)
-        return masked_string
+    if len(amt) is 0:
+        none_string = "None"
+        none_string
+        st.subheader("The vehicle is still in the parking. ")
+
+    else:
+        amt = cursor1.fetchone()[0]
+        st.subheader("Amount to be paid: RM {:.2f}".format(amt))
+
+        cursor.execute("SELECT vehicle_brand FROM vehicle_data_entrance WHERE plate_number = %s", (selection,))
+        vehicle_brand = cursor.fetchone()[0]
+
+        st.text("")
+        st.text("")
+        st.header("Payment Details")
+        st.image("creditcard.PNG", width=None)
+        card_num = st.text_input("CARD NUMBER: ")
+        card_type = st.selectbox("CARD TYPE: ", ["Visa", "AMEX", "MasterCard"])
+        st.text_input("EXPIRATION DATE: ", " / ")
+        st.text_input("CVV CODE: ")
+        st.text_input("CARD OWNER: ")
 
 
-    if st.button("Pay Now"):
-        st.text("=========================================================")
-        st.text("--------------------  PAYMENT RECEIPT -------------------")
-        st.text("=========================================================")
-        st.text("")
-        st.text("Vehicle Model :             {}".format(vehicle_brand))
-        st.text("")
-        st.text("Vehicle Plate Number :      {}".format(selection))
-        st.text("")
-        st.text("Vehicle Exit Date:          {}".format(date))
-        st.text("")
-        st.text("Total Parking Fee Amount:   {:.2f}".format(amt))
-        st.text("")
-        st.text("")
-        st.text("Paid with:                  {}".format(card_type))
-        st.text("")
-        st.text("Card Number:                {}".format(mask(card_num)))
-        st.text("")
-        st.text("----------------- Payment is successful! ----------------")
-        st.text("-------------- Thank you and see you again!! ------------")
-        st.text("")
-        st.text("")
-        st.text("=========================================================")
-        st.text("=========================================================")
+        def mask(string, digits_to_keep=4, mask_char='X'):
+
+            num_of_digits = sum(map(str.isdigit, string))
+            digits_to_mask = num_of_digits - digits_to_keep
+            masked_string = re.sub('\d', mask_char, string, digits_to_mask)
+            return masked_string
+
+
+        if st.button("Pay Now"):
+            st.text("=========================================================")
+            st.text("--------------------  PAYMENT RECEIPT -------------------")
+            st.text("=========================================================")
+            st.text("")
+            st.text("Vehicle Model :             {}".format(vehicle_brand))
+            st.text("")
+            st.text("Vehicle Plate Number :      {}".format(selection))
+            st.text("")
+            st.text("Vehicle Exit Date:          {}".format(date))
+            st.text("")
+            st.text("Total Parking Fee Amount:   {:.2f}".format(amt))
+            st.text("")
+            st.text("")
+            st.text("Paid with:                  {}".format(card_type))
+            st.text("")
+            st.text("Card Number:                {}".format(mask(card_num)))
+            st.text("")
+            st.text("----------------- Payment is successful! ----------------")
+            st.text("-------------- Thank you and see you again!! ------------")
+            st.text("")
+            st.text("")
+            st.text("=========================================================")
+            st.text("=========================================================")
 
 
 
