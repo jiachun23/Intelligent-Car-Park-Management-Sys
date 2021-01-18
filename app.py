@@ -153,16 +153,19 @@ def car_recogniser_entrance(our_img):
 
     st.text("Detected license plate number: ")
     num_plate = ' '.join([str(elem) for elem in bounds])
-    result_list = re.findall(r'^[A-Z | a-z]{1,5}\d{1,4}$', num_plate)
+
+    result_list = re.findall(r"([A-Za-z]{1,5}[ ]{0,1}[0-9]{1,4})|([A-Za-z]{1,5}[0-9]{1,4})$", num_plate)
 
     if len(result_list) == 0:
-        result_list = re.findall(r'^\d{1,4}[A-Z | a-z]{1,5}$', num_plate)
+        result_list = re.findall(r"([0-9]{1,4}[A-Za-z]{1,5})|([0-9]{1,4}[ ]{0,1}[A-Za-z]{1,5})$", num_plate)
         text = ' '.join([str(elem) for elem in result_list])
         converted_text = Convert(text)
         result_list = swapPositions(converted_text, 0, 1)
 
     result_text = ' '.join([str(elem) for elem in result_list])
-    result_text
+    text_plate_num = ''.join(x for x in result_text if x.isalpha() or x.isdigit())
+    text_plate_num
+
 
 
     enter_time = current_time()
@@ -172,7 +175,7 @@ def car_recogniser_entrance(our_img):
     day_enter = enter_time.strftime("%Y/%m/%d")
 
     sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, enter_date) VALUES(%s,%s,%s,%s)"""
-    record_to_enter = (predicted_val, result_text, time_enter, day_enter)
+    record_to_enter = (predicted_val, text_plate_num, time_enter, day_enter)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -219,24 +222,27 @@ def car_recogniser_exit(our_img):
     bounds = reader.readtext(new_array, detail=0)
 
     num_plate = ' '.join([str(elem) for elem in bounds])
-    result_list = re.findall(r'^[A-Z | a-z]{1,5}\d{1,4}$', num_plate)
+    result_list = re.findall(r"([A-Za-z]{1,5}[ ]{0,1}[0-9]{1,4})|([A-Za-z]{1,5}[0-9]{1,4})$", num_plate)
 
     if len(result_list) == 0:
-        result_list = re.findall(r'^\d{1,4}[A-Z | a-z]{1,5}$', num_plate)
+        result_list = re.findall(r"([0-9]{1,4}[A-Za-z]{1,5})|([0-9]{1,4}[ ]{0,1}[A-Za-z]{1,5})$", num_plate)
         text = ' '.join([str(elem) for elem in result_list])
         converted_text = Convert(text)
         result_list = swapPositions(converted_text, 0, 1)
 
     result_text = ' '.join([str(elem) for elem in result_list])
+    text_plate_num = ''.join(x for x in result_text if x.isalpha() or x.isdigit())
+
 
 
     ext_time = current_time()
 
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
     day_exit = ext_time.strftime("%Y/%m/%d")
+    
 
     sql = "select vehicle_brand from vehicle_data_entrance where plate_number = %s and enter_date = %s"
-    cursor.execute(sql,(result_text,day_exit))
+    cursor.execute(sql,(text_plate_num,day_exit))
     brand = str(cursor.fetchone()[0])
 
     if predicted_val != brand:
@@ -249,7 +255,7 @@ def car_recogniser_exit(our_img):
     predicted_val
 
     st.text("Detected license plate number: ")
-    result_text
+    text_plate_num
 
     st.text("The vehicle exit the parking at:")
     ext_time
@@ -257,7 +263,7 @@ def car_recogniser_exit(our_img):
 
 
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s) """
-    record_to_enter = (predicted_val, result_text, time_exit, day_exit)
+    record_to_enter = (predicted_val, text_plate_num, time_exit, day_exit)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -516,8 +522,8 @@ elif options == 'Parking Database':
     df = pd.DataFrame(sql, columns=['vehicle_brand', 'plate_number', 'enter_time', 'exit_time', 'duration', 'fee'])
     df
 
-    # save as excel
-    df.to_excel(r'parking_database.xlsx', index=False, header=True)
+    # save as csv
+    df.to_csv(r'parking_database.csv', index=False, header=True)
 
 
 
@@ -626,8 +632,8 @@ elif options == 'No of Parking Transactions by Day':
                       yaxis_title='No of Parking Transactions')
     st.plotly_chart(fig)
 
-    # save as excel
-    df.to_excel(r'transactions_by_day.xlsx', index=False, header=True)
+    # save as csv
+    df.to_csv(r'transactions_by_day.csv', index=False, header=True)
 
 elif options == 'Amount of Parking Fee Collected by Day':
 
@@ -693,8 +699,8 @@ elif options == 'Amount of Parking Fee Collected by Day':
                       yaxis_title='Amount of Fee Collected (RM)')
     st.plotly_chart(fig)
 
-    # save as excel
-    df.to_excel(r'fee_collected_by_day.xlsx', index=False, header=True)
+    # save as csv
+    df.to_csv(r'fee_collected_by_day.csv', index=False, header=True)
 
 
 elif options == 'Payment Gateway':
