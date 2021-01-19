@@ -394,7 +394,7 @@ elif options == 'Parking Fee Calculation':
 
     result_exit = cursor.fetchall()
 
-    if len(result_exit) is 0:
+    if len(result_exit) == 0:
         none_string = "None"
         none_string
         st.subheader("The vehicle has not leave the parking. ")
@@ -407,7 +407,7 @@ elif options == 'Parking Fee Calculation':
 
 
     # shows the calculation of parking duration and fee
-    if len(result_exit) is not 0:
+    if len(result_exit) != 0:
         st.text("Total parking duration (in minutes):")
         time_enter = dt.strptime(result_enter, "%Y/%m/%d, %H:%M:%S")
         time_exit = dt.strptime(result_exit, "%Y/%m/%d, %H:%M:%S")
@@ -573,8 +573,8 @@ elif options == 'No of Vehicles in the Parking':
         ent = 0
 
     sql_exit = """select count(plate_number) from vehicle_data_exit where exit_date = %s """
-    cursor1.execute(sql_exit, (exit_date,))
-    ext = cursor1.fetchone()
+    cursor.execute(sql_exit, (exit_date,))
+    ext = cursor.fetchone()
     ext = int(''.join(map(str, ext)))
     if ext != None:
         ext = ext
@@ -763,7 +763,7 @@ elif options == 'Payment Gateway':
 
     amt = cursor.fetchall()
 
-    if len(amt) is 0:
+    if len(amt) == 0:
         none_string = "None"
         none_string
         st.subheader("The vehicle is still in the parking. ")
