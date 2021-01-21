@@ -163,8 +163,10 @@ def car_recogniser_entrance(our_img):
         result_list = swapPositions(converted_text, 0, 1)
 
     result_text = ' '.join([str(elem) for elem in result_list])
-    text_plate_num = ''.join(x for x in result_text if x.isalpha() or x.isdigit())
-    text_plate_num
+    text_plate = ''.join(x for x in result_text if x.isalpha())
+    text_plate_digit = ''.join(x for x in result_text if x.isdigit())
+    final_plate_num = text_plate + text_plate_digit
+    final_plate_num
 
 
 
@@ -175,7 +177,7 @@ def car_recogniser_entrance(our_img):
     day_enter = enter_time.strftime("%Y/%m/%d")
 
     sql = """INSERT INTO vehicle_data_entrance(vehicle_brand, plate_number, enter_time, enter_date) VALUES(%s,%s,%s,%s)"""
-    record_to_enter = (predicted_val, text_plate_num, time_enter, day_enter)
+    record_to_enter = (predicted_val, final_plate_num, time_enter, day_enter)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -231,7 +233,10 @@ def car_recogniser_exit(our_img):
         result_list = swapPositions(converted_text, 0, 1)
 
     result_text = ' '.join([str(elem) for elem in result_list])
-    text_plate_num = ''.join(x for x in result_text if x.isalpha() or x.isdigit())
+    text_plate = ''.join(x for x in result_text if x.isalpha())
+    text_plate_digit = ''.join(x for x in result_text if x.isdigit())
+    final_plate_num = text_plate + text_plate_digit
+    final_plate_num
 
 
 
@@ -242,7 +247,7 @@ def car_recogniser_exit(our_img):
     
 
     sql = "select vehicle_brand from vehicle_data_entrance where plate_number = %s and enter_date = %s"
-    cursor.execute(sql,(text_plate_num,day_exit))
+    cursor.execute(sql,(final_plate_num,day_exit))
     brand = str(cursor.fetchone()[0])
 
     if predicted_val != brand:
@@ -255,7 +260,7 @@ def car_recogniser_exit(our_img):
     predicted_val
 
     st.text("Detected license plate number: ")
-    text_plate_num
+    final_plate_num
 
     st.text("The vehicle exit the parking at:")
     ext_time
@@ -263,7 +268,7 @@ def car_recogniser_exit(our_img):
 
 
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s) """
-    record_to_enter = (predicted_val, text_plate_num, time_exit, day_exit)
+    record_to_enter = (predicted_val, final_plate_num, time_exit, day_exit)
     cursor.execute(sql, record_to_enter)
     conn.commit()
     cursor.close()
@@ -423,21 +428,21 @@ elif options == 'Parking Fee Calculation':
             cursor1.execute(sql, record_to_enter)
 
 
-        elif 15 <= duration <= 60:
+        elif 15 < duration <= 60:
             fee = 2.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
             record_to_enter = (duration, fee, (selection,))
             cursor1.execute(sql, record_to_enter)
 
-        elif 60 <= duration <= 120:
+        elif 60 < duration <= 120:
             fee = 3.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
             record_to_enter = (duration, fee, (selection,))
             cursor1.execute(sql, record_to_enter)
 
-        elif 120 <= duration <= 180:
+        elif 120 < duration <= 180:
             fee = 4.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
@@ -445,7 +450,7 @@ elif options == 'Parking Fee Calculation':
             cursor1.execute(sql, record_to_enter)
 
 
-        elif 180 <= duration <= 240:
+        elif 180 < duration <= 240:
             fee = 5.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
@@ -453,7 +458,7 @@ elif options == 'Parking Fee Calculation':
             cursor1.execute(sql, record_to_enter)
 
 
-        elif 240 <= duration <= 300:
+        elif 240 < duration <= 300:
             fee = 6.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
@@ -461,7 +466,7 @@ elif options == 'Parking Fee Calculation':
             cursor1.execute(sql, record_to_enter)
 
 
-        elif 300 <= duration <= 360:
+        elif 300 < duration <= 360:
             fee = 7.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
@@ -469,7 +474,7 @@ elif options == 'Parking Fee Calculation':
             cursor1.execute(sql, record_to_enter)
 
 
-        elif 360 <= duration <= 420:
+        elif 360 < duration <= 420:
             fee = 8.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
@@ -477,7 +482,7 @@ elif options == 'Parking Fee Calculation':
             cursor1.execute(sql, record_to_enter)
 
 
-        elif 420 <= duration <= 480:
+        elif 420 < duration <= 480:
             fee = 9.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
