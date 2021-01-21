@@ -236,7 +236,7 @@ def car_recogniser_exit(our_img):
     text_plate = ''.join(x for x in result_text if x.isalpha())
     text_plate_digit = ''.join(x for x in result_text if x.isdigit())
     final_plate_num = text_plate + text_plate_digit
-    final_plate_num
+    
 
 
 
