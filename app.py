@@ -13,6 +13,7 @@ from datetime import datetime as dt
 import pandas as pd
 import plotly.graph_objects as go
 import re
+import cv2
 
 
 def default_device():
@@ -103,13 +104,16 @@ car_model = torch.load(path, map_location=torch.device('cpu'))
 def current_time():
     return datetime.datetime.now().replace(microsecond=0)
 
+
 def Convert(string):
     li = list(string.split(" "))
     return li
 
+
 def swapPositions(list, pos1, pos2):
     list[pos1], list[pos2] = list[pos2], list[pos1]
     return list
+
 
 def car_recogniser_entrance(our_img):
     # Establishing the connection
@@ -167,8 +171,6 @@ def car_recogniser_entrance(our_img):
     text_plate_digit = ''.join(x for x in result_text if x.isdigit())
     final_plate_num = text_plate + text_plate_digit
     final_plate_num
-
-
 
     enter_time = current_time()
     st.text("The vehicle enter the parking at:")
@@ -236,25 +238,20 @@ def car_recogniser_exit(our_img):
     text_plate = ''.join(x for x in result_text if x.isalpha())
     text_plate_digit = ''.join(x for x in result_text if x.isdigit())
     final_plate_num = text_plate + text_plate_digit
-    
-
-
 
     ext_time = current_time()
 
     time_exit = ext_time.strftime("%Y/%m/%d, %H:%M:%S")
     day_exit = ext_time.strftime("%Y/%m/%d")
-    
 
     sql = "select vehicle_brand from vehicle_data_entrance where plate_number = %s and enter_date = %s"
-    cursor.execute(sql,(final_plate_num,day_exit))
+    cursor.execute(sql, (final_plate_num, day_exit))
     brand = str(cursor.fetchone()[0])
 
     if predicted_val != brand:
         predicted_val = brand
     else:
         predicted_val = predicted_val
-
 
     st.text("Detected vehicle model: ")
     predicted_val
@@ -264,8 +261,6 @@ def car_recogniser_exit(our_img):
 
     st.text("The vehicle exit the parking at:")
     ext_time
-
-
 
     sql = """INSERT INTO vehicle_data_exit(vehicle_brand, plate_number, exit_time, exit_date) VALUES(%s,%s,%s,%s) """
     record_to_enter = (predicted_val, final_plate_num, time_exit, day_exit)
@@ -321,10 +316,11 @@ def car_detection_exit():
 
 # option at the side bar
 st.sidebar.title("Navigation Panel")
-options = st.sidebar.radio("Go to", ['Parking Entrance', 'Parking Exit', 'Parking Fee Calculation',
-                                     'Parking Database', 'No of Vehicles in the Parking',
-                                     'No of Parking Transactions by Day',
-                                     'Amount of Parking Fee Collected by Day', 'Payment Gateway'])
+options = st.sidebar.radio("Go to",
+                           ['Parking Entrance', 'Parking Exit', 'Driver Face Recognition', 'Parking Fee Calculation',
+                            'Parking Database', 'No of Vehicles in the Parking',
+                            'No of Parking Transactions by Day',
+                            'Amount of Parking Fee Collected by Day', 'Payment Gateway'])
 
 # title
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -339,6 +335,116 @@ elif options == 'Parking Exit':
 
     st.title("Car Model + License Plate Recognition for Parking Exit")
     car_detection_exit()
+
+
+elif options == 'Driver Face Recognition':
+
+    st.title("Driver Face Recognition for Parking Entrance")
+
+    html_temp = """
+            <body style="background-color:red;">
+            <div style="background-color:teal ;padding:10px">
+            <h2 style="color:white;text-align:center;">Intelligent Car Park Management System</h2>
+            </div>
+            </body>
+            """
+    st.markdown(html_temp, unsafe_allow_html=True)
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+
+
+    def face_detection_entrance(image):
+        img = np.array(image)
+        # img = cv2.imread(image)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        for (x, y, w, h) in faces:
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 5)
+            crop_img = img[y:y + h, x:x + w]
+
+        return crop_img
+
+
+    def face_detection_exit(image):
+        img = np.array(image)
+        # img = cv2.imread(image)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        for (x, y, w, h) in faces:
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 5)
+            crop_img = img[y:y + h, x:x + w]
+
+        return crop_img
+
+
+    # def mse(imageA, imageB):
+    #     # the 'Mean Squared Error' between the two images is the
+    #     # sum of the squared difference between the two images;
+    #     # NOTE: the two images must have the same dimension
+    #     err = np.sum((np.array(imageA).astype("float") - np.array(imageB).astype("float")) ** 2)
+    #     err /= float(np.array(imageA).shape[0] * np.array(imageA).shape[1])
+    #
+    #     if imageA is None:
+    #         if imageB is None:
+    #             err = -1
+    #
+    #
+    #     # return the MSE, the lower the error, the more "similar"
+    #     # the two images are
+    #     return err
+
+    def compare_images(imageA, imageB):
+        # compute the mean squared error
+        # index for the image
+
+        if imageA is not None:
+            if imageB is not None:
+                err = np.sum((np.array(imageA).astype("float") - np.array(imageB).astype("float")) ** 2)
+                err /= float(np.array(imageA).shape[0] * np.array(imageA).shape[1])
+
+                # if err == None:
+                #     st.header("No person detected")
+
+                if 0 <= err <= 0.5:
+                    st.header("The person is identical")
+
+                else:
+                    st.header("The person is not identical")
+
+                return err
+
+
+
+    first_img = []
+    sec_img = []
+
+    st.header("Image at Entrance")
+    image_file = st.file_uploader("Upload Image", type=['jpg', 'png', 'jpeg'], key="parking_entrance")
+    if image_file is not None:
+        first_image = PIL.Image.open(image_file)
+        st.image(first_image)
+        first_img = face_detection_entrance(first_image)
+
+    st.header("Image at Exit")
+    image_file_1 = st.file_uploader("Upload Image", type=['jpg', 'png', 'jpeg'], key="parking_exit")
+    if image_file_1 is not None:
+        sec_image = PIL.Image.open(image_file_1)
+        st.image(sec_image)
+        sec_img = face_detection_exit(sec_image)
+
+    if first_img is not None:
+        if sec_img is not None:
+            compare = compare_images(first_img, sec_img)
+            st.text("The value of MSE: ")
+            compare
+
+        else:
+            st.header("Please upload an image.")
+
+
 
 
 
@@ -374,25 +480,23 @@ elif options == 'Parking Fee Calculation':
 
     sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance where vehicle_data_entrance.enter_date = %s order by vehicle_data_entrance.plate_number """
 
-    cursor.execute(sql,(date,))
+    cursor.execute(sql, (date,))
 
     result = [i[0] for i in cursor.fetchall()]
-
-
 
     dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
     selection = dropdown
     st.text("Vehicle Entrance Time:")
     cursor.execute(
         "select vehicle_data_entrance.enter_time from vehicle_data_entrance where vehicle_data_entrance.plate_number = %s and vehicle_data_entrance.enter_date = %s",
-        (selection,date))
+        (selection, date))
     result_enter = str(cursor.fetchone()[0])
     result_enter
 
     st.text("Vehicle Exit Time:")
     cursor.execute(
         "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s and vehicle_data_exit.exit_date = %s ",
-        (selection,date))
+        (selection, date))
     cursor1.execute(
         "select vehicle_data_exit.exit_time from vehicle_data_exit where vehicle_data_exit.plate_number = %s and vehicle_data_exit.exit_date = %s ",
         (selection, date))
@@ -408,8 +512,6 @@ elif options == 'Parking Fee Calculation':
     else:
         result_exit = str(cursor1.fetchone()[0])
         result_exit
-
-
 
     # shows the calculation of parking duration and fee
     if len(result_exit) != 0:
@@ -498,9 +600,6 @@ elif options == 'Parking Fee Calculation':
 
 
 
-
-
-
 elif options == 'Parking Database':
 
     st.title("Parking Database")
@@ -563,7 +662,6 @@ elif options == 'No of Vehicles in the Parking':
     conn.autocommit = True
     cursor = conn.cursor()
 
-
     exit_date = st.date_input('Date: ')
 
     exit_date = exit_date.strftime("%Y/%m/%d")
@@ -617,7 +715,7 @@ elif options == 'No of Parking Transactions by Day':
     conn.autocommit = True
     cursor = conn.cursor()
 
-    start_date = st.date_input('Starting Date: ', datetime.date(2021,1,1))
+    start_date = st.date_input('Starting Date: ', datetime.date(2021, 1, 1))
     end_date = st.date_input('End Date: ')
 
     start_date = start_date.strftime("%Y/%m/%d")
@@ -632,7 +730,6 @@ elif options == 'No of Parking Transactions by Day':
     list2 = [item[0] for item in cursor.fetchall()]
 
     result = list(zip(list1, list2))
-
 
     df = pd.DataFrame([[ij for ij in i] for i in result])
     df.rename(columns={0: 'number', 1: 'date'}, inplace=True)
@@ -670,7 +767,7 @@ elif options == 'Amount of Parking Fee Collected by Day':
     conn.autocommit = True
     cursor = conn.cursor()
 
-    start_date = st.date_input('Starting Date: ',datetime.date(2021,1,1))
+    start_date = st.date_input('Starting Date: ', datetime.date(2021, 1, 1))
     end_date = st.date_input('End Date: ')
 
     start_date = start_date.strftime("%Y/%m/%d")
@@ -688,26 +785,21 @@ elif options == 'Amount of Parking Fee Collected by Day':
     st.header("The total parking fee collected from {} to {} is: ".format(start_date, end_date))
     st.subheader("RM {}.00".format(sum_fee))
 
-
     sql = """ select cast(sum(fee) as int) from vehicle_data_exit where exit_date >= %s  AND  exit_date <= %s group by exit_date"""
-    cursor.execute(sql, (start_date,end_date))
+    cursor.execute(sql, (start_date, end_date))
     list1 = [item[0] for item in cursor.fetchall()]
-
-
 
     sql = """select exit_date from vehicle_data_exit where exit_date >= %s AND  exit_date <= %s group by exit_date"""
     cursor.execute(sql, (start_date, end_date))
     list2 = [item[0] for item in cursor.fetchall()]
 
-
     result = list(zip(list1, list2))
-    
 
     df = pd.DataFrame([[ij for ij in i] for i in result])
     df.rename(columns={0: 'fee', 1: 'exit_date'}, inplace=True)
 
     df_sorted = df.sort_values('exit_date')
-    data = [go.Scatter(x= df_sorted['exit_date'], y= df_sorted['fee'])]
+    data = [go.Scatter(x=df_sorted['exit_date'], y=df_sorted['fee'])]
     fig = go.Figure(data=data)
     fig.update_layout(title='Amount of Parking Fee Collected by Day', xaxis_title='Date',
                       yaxis_title='Amount of Fee Collected (RM)')
@@ -748,7 +840,7 @@ elif options == 'Payment Gateway':
 
     sql = """select vehicle_data_entrance.plate_number from vehicle_data_entrance where vehicle_data_entrance.enter_date = %s order by vehicle_data_entrance.plate_number  """
 
-    cursor.execute(sql,(date,))
+    cursor.execute(sql, (date,))
 
     result = [i[0] for i in cursor.fetchall()]
 
@@ -757,14 +849,12 @@ elif options == 'Payment Gateway':
     dropdown = st.selectbox('Which vehicle you would like to choose?', (result))
     selection = dropdown
 
-
     cursor.execute(
         "SELECT cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
         (selection, date))
     cursor1.execute(
         "SELECT cast(fee as int) FROM vehicle_data_exit WHERE plate_number = %s AND exit_date = %s",
         (selection, date))
-
 
     amt = cursor.fetchall()
 
