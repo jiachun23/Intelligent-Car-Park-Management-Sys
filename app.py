@@ -354,7 +354,6 @@ elif options == 'Driver Face Recognition':
 
     def face_detection_entrance(image):
         img = np.array(image)
-        # img = cv2.imread(image)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
@@ -368,7 +367,6 @@ elif options == 'Driver Face Recognition':
 
     def face_detection_exit(image):
         img = np.array(image)
-        # img = cv2.imread(image)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
@@ -380,39 +378,23 @@ elif options == 'Driver Face Recognition':
         return crop_img
 
 
-    # def mse(imageA, imageB):
-    #     # the 'Mean Squared Error' between the two images is the
-    #     # sum of the squared difference between the two images;
-    #     # NOTE: the two images must have the same dimension
-    #     err = np.sum((np.array(imageA).astype("float") - np.array(imageB).astype("float")) ** 2)
-    #     err /= float(np.array(imageA).shape[0] * np.array(imageA).shape[1])
-    #
-    #     if imageA is None:
-    #         if imageB is None:
-    #             err = -1
-    #
-    #
-    #     # return the MSE, the lower the error, the more "similar"
-    #     # the two images are
-    #     return err
-
     def compare_images(imageA, imageB):
         # compute the mean squared error
         # index for the image
+        imageA = cv2.resize(imageA,(120,120))
+        imageB = cv2.resize(imageB,(120,120))
 
         if imageA is not None:
             if imageB is not None:
                 err = np.sum((np.array(imageA).astype("float") - np.array(imageB).astype("float")) ** 2)
                 err /= float(np.array(imageA).shape[0] * np.array(imageA).shape[1])
 
-                # if err == None:
-                #     st.header("No person detected")
 
-                if 0 <= err <= 0.5:
-                    st.header("The person is identical")
+                if 0 <= err <= 7000:
+                    st.subheader("Result: The driver is identical")
 
                 else:
-                    st.header("The person is not identical")
+                    st.subheader("Result: The driver is not identical")
 
                 return err
 
@@ -421,14 +403,14 @@ elif options == 'Driver Face Recognition':
     first_img = []
     sec_img = []
 
-    st.header("Image at Entrance")
+    st.subheader("Image at Entrance")
     image_file = st.file_uploader("Upload Image", type=['jpg', 'png', 'jpeg'], key="parking_entrance")
     if image_file is not None:
         first_image = PIL.Image.open(image_file)
         st.image(first_image)
         first_img = face_detection_entrance(first_image)
 
-    st.header("Image at Exit")
+    st.subheader("Image at Exit")
     image_file_1 = st.file_uploader("Upload Image", type=['jpg', 'png', 'jpeg'], key="parking_exit")
     if image_file_1 is not None:
         sec_image = PIL.Image.open(image_file_1)
