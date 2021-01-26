@@ -391,10 +391,10 @@ elif options == 'Driver Face Recognition':
 
 
                 if 0 <= err <= 7000:
-                    st.subheader("Result: The driver is identical")
+                    st.subheader("Result: The driver is identical. Access to leave car park is granted!")
 
                 else:
-                    st.subheader("Result: The driver is not identical")
+                    st.subheader("Result: The driver is not identical. Access to leave car park is denied!")
 
                 return err
 
