@@ -318,7 +318,7 @@ def car_detection_exit():
 st.sidebar.title("Navigation Panel")
 options = st.sidebar.radio("Go to",
                            ['Parking Entrance', 'Parking Exit', 'Driver Face Recognition', 'Parking Fee Calculation',
-                            'Parking Database', 'No of Vehicles in the Parking',
+                            'Car Park Database', 'No of Vehicles in the Car Park',
                             'No of Parking Transactions by Day',
                             'Amount of Parking Fee Collected by Day', 'Payment Gateway'])
 
@@ -488,7 +488,7 @@ elif options == 'Parking Fee Calculation':
     if len(result_exit) == 0:
         none_string = "None"
         none_string
-        st.subheader("The vehicle has not leave the parking. ")
+        st.subheader("The vehicle is still in the car park.")
 
 
     else:
@@ -575,16 +575,16 @@ elif options == 'Parking Fee Calculation':
 
         else:
             fee = 10.00
-            st.subheader("Parking for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
+            st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
             record_to_enter = (duration, fee, (selection,))
             cursor1.execute(sql, record_to_enter)
 
 
 
-elif options == 'Parking Database':
+elif options == 'Car Park Database':
 
-    st.title("Parking Database")
+    st.title("Car Park Database")
     html_temp = """
            <body style="background-color:red;">
            <div style="background-color:teal ;padding:10px">
@@ -623,9 +623,9 @@ elif options == 'Parking Database':
 
 
 
-elif options == 'No of Vehicles in the Parking':
+elif options == 'No of Vehicles in the Car Park':
 
-    st.title("No of Vehicles in the Parking")
+    st.title("No of Vehicles in the Car Park")
     html_temp = """
               <body style="background-color:red;">
               <div style="background-color:teal ;padding:10px">
@@ -843,7 +843,7 @@ elif options == 'Payment Gateway':
     if len(amt) == 0:
         none_string = "None"
         none_string
-        st.subheader("The vehicle is still in the parking. ")
+        st.subheader("The vehicle is still in the car park. ")
 
     else:
         amt = cursor1.fetchone()[0]
