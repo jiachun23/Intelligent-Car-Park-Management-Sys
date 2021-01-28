@@ -327,19 +327,19 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 
 if options == 'Parking Entrance':
 
-    st.title("Car Model + License Plate Recognition for Parking Entrance")
+    st.title("Vehicle Model + License Plate Recognition for Parking Entrance")
     car_detection_entrance()
 
 
 elif options == 'Parking Exit':
 
-    st.title("Car Model + License Plate Recognition for Parking Exit")
+    st.title("Vehicle Model + License Plate Recognition for Parking Exit")
     car_detection_exit()
 
 
 elif options == 'Driver Face Recognition':
 
-    st.title("Driver Face Recognition for Parking Entrance")
+    st.title("Driver Face Recognition")
 
     html_temp = """
             <body style="background-color:red;">
@@ -358,9 +358,15 @@ elif options == 'Driver Face Recognition':
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        for (x, y, w, h) in faces:
-            img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 5)
-            crop_img = img[y:y + h, x:x + w]
+        if faces is not None:
+            for (x, y, w, h) in faces:
+                img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 5)
+                crop_img = img[y:y + h, x:x + w]
+
+        else:
+            crop_img = 0
+            st.subheader("No face detected in the image.")
+
 
         return crop_img
 
