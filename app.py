@@ -396,7 +396,7 @@ elif options == 'Driver Face Recognition':
                 err /= float(np.array(imageA).shape[0] * np.array(imageA).shape[1])
 
 
-                if 0 <= err <= 7000:
+                if 0 <= err <= 2000:
                     st.subheader("Result: The driver is identical. Access to leave car park is granted!")
 
                 else:
