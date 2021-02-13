@@ -513,77 +513,77 @@ elif options == 'Parking Fee Calculation':
         if 0 <= duration <= 15:
             fee = 0.00
             st.subheader("Parking fee is free. No payment needed. :oncoming_automobile:")
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s """
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
 
         elif 15 < duration <= 60:
             fee = 2.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s """
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
         elif 60 < duration <= 120:
             fee = 3.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s """
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
         elif 120 < duration <= 180:
             fee = 4.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s"""
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
 
         elif 180 < duration <= 240:
             fee = 5.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s"""
+            record_to_enter = (duration, fee,(selection,),date)
             cursor1.execute(sql, record_to_enter)
 
 
         elif 240 < duration <= 300:
             fee = 6.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s """
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
 
         elif 300 < duration <= 360:
             fee = 7.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s """
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
 
         elif 360 < duration <= 420:
             fee = 8.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s"""
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
 
         elif 420 < duration <= 480:
             fee = 9.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s """
+            record_to_enter = (duration, fee, (selection,),date)
             cursor1.execute(sql, record_to_enter)
 
         else:
             fee = 10.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
-            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s """
-            record_to_enter = (duration, fee, (selection,))
+            sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s"""
+            record_to_enter = (duration, fee, (selection, date))
             cursor1.execute(sql, record_to_enter)
 
 
