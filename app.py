@@ -583,7 +583,7 @@ elif options == 'Parking Fee Calculation':
             fee = 10.00
             st.subheader("Parking fee for {} minutes is RM {:.2f} :oncoming_automobile:".format(duration, fee))
             sql = """UPDATE vehicle_data_exit SET duration = %s , fee = %s WHERE plate_number = %s and exit_date = %s"""
-            record_to_enter = (duration, fee, (selection, date))
+            record_to_enter = (duration, fee, (selection,), date)
             cursor1.execute(sql, record_to_enter)
 
 
