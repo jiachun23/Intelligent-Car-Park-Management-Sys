@@ -1,5 +1,5 @@
 # Intelligent-Car-Park-Management-Sys
-FYP Title: Intelligent Car Parking Management System
+Intelligent Car Parking Management System
 
 This program will allow you to predict the vehicle model and the license plate number based on the images you upload to the web application developed with streamlit. 
 
